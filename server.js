@@ -34,7 +34,7 @@ async function handle(req, res) {
   const page = { '/': 'index.html', '/guide': 'guide.html' }[url.pathname];
   if (m === 'GET' && page) {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-    return fs.createReadStream(path.join(__dirname, page)).pipe(res);
+    return res.end(yt.packaged ? require('node:sea').getAsset(page, 'utf8') : fs.readFileSync(path.join(__dirname, page)));
   }
   if (api !== 'api') return send(res, 404, { error: 'Not found.' });
 
@@ -78,9 +78,24 @@ async function handle(req, res) {
   send(res, 404, { error: 'Not found.' });
 }
 
-http.createServer((req, res) => handle(req, res).catch((e) => send(res, 400, { error: e.message })))
+// Packaged app: open the browser for the user. If the app is already running, just open it again.
+const URL_ = `http://127.0.0.1:${PORT}`;
+const openBrowser = () => {
+  if (!yt.packaged) return;
+  const [cmd, args] = { win32: ['cmd', ['/c', 'start', '', URL_]], darwin: ['open', [URL_]] }[process.platform] || ['xdg-open', [URL_]];
+  require('child_process').spawn(cmd, args, { stdio: 'ignore', detached: true }).on('error', () => {}).unref();
+};
+
+const server = http.createServer((req, res) => handle(req, res).catch((e) => send(res, 400, { error: e.message })));
+server.on('error', (e) => {
+  if (e.code === 'EADDRINUSE' && yt.packaged) { console.log(`Already running at ${URL_}`); openBrowser(); setTimeout(() => process.exit(0), 500); return; }
+  throw e;
+});
+server
   .listen(PORT, '127.0.0.1', () => {
-    console.log(`YouTube research scraper: open http://127.0.0.1:${PORT}`);
+    console.log(`YouTube research scraper: open ${URL_}`);
+    if (yt.packaged) console.log('Keep this window open while you work. Close it to stop the app.');
+    openBrowser();
     jobs.kick(); // resume jobs left running or paused
     setInterval(jobs.kick, 60 * 1000); // picks paused jobs back up after the quota reset
   });

@@ -52,7 +52,22 @@ Existing comment scrapers start from videos you already have. The slow part of r
 - [Node.js](https://nodejs.org) 20 or newer
 - A free **YouTube Data API v3** key from Google Cloud (this is not an AI model key)
 
-## Quick start
+## Download the app
+
+No Node.js needed. Get the file for your system from the [latest release](https://github.com/tanim913/yt-research-scraper/releases/latest) and open it. It starts the app and opens it in your browser; keep its window open while you work.
+
+| System | File |
+|---|---|
+| Windows | `yt-research-scraper-windows-x64.exe` |
+| macOS (M1 or newer) | `yt-research-scraper-macos-apple-silicon` |
+| macOS (Intel) | `yt-research-scraper-macos-intel` |
+| Linux | `yt-research-scraper-linux-x64` |
+
+The apps are not code-signed, so the first launch shows a warning. On Windows press **More info → Run anyway**. On macOS right-click the file and press **Open**. On macOS and Linux you may need to run `chmod +x <file>` first. The app keeps its data in `~/.yt-research-scraper/`.
+
+The apps are built by GitHub Actions ([release.yml](.github/workflows/release.yml)) when a version tag is pushed.
+
+## Run from source
 
 ```bash
 git clone https://github.com/tanim913/yt-research-scraper.git
@@ -114,6 +129,7 @@ top_level = df[df.is_reply == 0]
 | `filters.js` | Research rules, applied locally |
 | `index.html` | The app (single page, no build step) |
 | `guide.html` | The user guide |
+| `build.js` | Packs the app into a single executable (used by the release workflow) |
 | `test.js` | Tests against a fake API: no network, no quota |
 
 Run the tests with:

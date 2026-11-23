@@ -2,7 +2,9 @@
 const fs = require('fs');
 const path = require('path');
 
-const DATA = process.env.YT_DATA || path.join(__dirname, 'data');
+// A packaged app has no sensible working folder, so it keeps its data in the user's home.
+const packaged = (() => { try { return require('node:sea').isSea(); } catch { return false; } })();
+const DATA = process.env.YT_DATA || (packaged ? path.join(require('os').homedir(), '.yt-research-scraper') : path.join(__dirname, 'data'));
 const BASE = 'https://www.googleapis.com/youtube/v3/';
 const DAILY = 10000;
 const DEAD_REASONS = ['quotaExceeded', 'dailyLimitExceeded', 'keyInvalid', 'accessNotConfigured', 'ipRefererBlocked'];
@@ -100,4 +102,4 @@ async function call(endpoint, params, cost = 1) {
   }
 }
 
-module.exports = { call, addKey, removeKey, getKeys, status, hasLiveKey, setFetch, load, save, ptDay, AllKeysExhausted, SkipError, DATA };
+module.exports = { call, addKey, removeKey, getKeys, status, hasLiveKey, setFetch, load, save, ptDay, AllKeysExhausted, SkipError, DATA, packaged };
