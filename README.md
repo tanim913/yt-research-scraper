@@ -96,6 +96,23 @@ Then describe your topic in your own words and press **Suggest keywords**. After
 
 What is sent: your topic text, video titles and channel names, and (only when you press Translate) the comments you choose. Never your YouTube keys. Free plans have small limits, so big jobs take minutes, and free services may use submitted text to improve their products; read the service's terms before sending comments. The key is saved in `~/.yt-research-scraper/ai.json` on your computer.
 
+
+### How the AI helper uses your free key
+
+The AI only runs when you press one of three buttons. The app sends text in batches and waits 6 seconds between requests (at most 10 a minute), so a free plan is not used up in a burst.
+
+| You press | What is sent | Requests | Example |
+|---|---|---|---|
+| **Suggest keywords** | Your topic sentence (up to 500 letters) and the keywords already in the box | 1 per press | One press is one request |
+| **AI: cross out off-topic** | Video titles and channel names, 50 per request (titles cut at 140 letters); only videos still circled | 1 per 50 videos | 1,000 videos = 20 requests, about 2 minutes |
+| **Translate with AI** | Text of comments not in English letters, 40 per request (cut at 500 letters) | 1 per 40 comments | 1,000 comments = 25 requests, about 3 minutes |
+
+Token counts are rough: English is about 1 token per 4 letters, and Bangla and other scripts use noticeably more. If the service says you reached its free limit, the app stops with a message and keeps what it already did; translation continues where it left off.
+
+**Never sent:** your YouTube API keys, comments you don't translate, view counts, likes, descriptions, or your downloaded files.
+
+**Make your free tokens last:** apply the free keyword rules first so the AI checks fewer videos; run **Clean comments** before translating (it is free and drops spam and duplicates first); if you don't need English text, keep or remove non-English comments instead of translating; and check your key's limits on your Gemini or OpenRouter account page, because they change from time to time.
+
 ## Run from source
 
 ```bash

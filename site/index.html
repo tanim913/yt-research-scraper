@@ -147,6 +147,11 @@
   .aisteps li { counter-increment: a; display: grid; grid-template-columns: 2.2em 1fr; gap: 6px; padding: 14px 0; border-bottom: 1px solid var(--rule-strong); color: var(--ink-2); }
   .aisteps li::before { content: counter(a); font: 600 24px/1 var(--cond); color: var(--grease-dark); }
   .aisteps b { color: var(--ink); }
+  .sheet.wrapcells td { white-space: normal; max-width: none; vertical-align: top; }
+  .sheet.wrapcells table { min-width: 720px; }
+  .cols2 { margin-top: 34px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(24px, 5vw, 64px); }
+  .cols2 h3 { font: 600 22px/1.1 var(--cond); letter-spacing: .02em; margin-bottom: 4px; }
+  @media (max-width: 760px) { .cols2 { grid-template-columns: minmax(0, 1fr); } }
   /* download band */
   .get { margin-top: clamp(64px, 9vw, 120px); padding: clamp(52px, 7vw, 88px) 0; }
   .get h2 { color: #fff; max-width: 14ch; }
@@ -359,6 +364,46 @@
           <li><span><b>Paste and save.</b> Choose <em>Google Gemini</em>, paste the key and press <em>Save AI key</em>. Then type your topic and press <em>Suggest keywords</em>.</span></li>
         </ol>
         <p class="fine">Free plans have small limits, so large checks take a few minutes. Free services may use submitted text to improve their products; check their terms before translating comments.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="tokens">
+    <div class="wrap">
+      <h2>How your free AI key is used</h2>
+      <p class="sub">The AI never runs on its own. It runs only when you press one of three buttons, and each one sends a small, known amount to the service you chose (Gemini or OpenRouter). The app sends the text in batches and waits between requests so a free plan is not used up in a burst.</p>
+
+      <div class="sheet wrapcells reveal" role="region" aria-label="What each AI button sends" tabindex="0" style="margin-top:30px">
+        <table>
+          <thead><tr><th>You press</th><th>What is sent</th><th>Requests</th><th>Example</th></tr></thead>
+          <tbody>
+            <tr><td><b>Suggest keywords</b></td><td>Your topic sentence (up to 500 letters) and the keywords already in the box.</td><td>1 per press</td><td>One press, one request, a few hundred tokens</td></tr>
+            <tr><td><b>AI: cross out off-topic</b></td><td>Video titles and channel names, <b>50 per request</b>. Each title is cut at 140 letters. Only videos still circled are checked.</td><td>1 per 50 videos</td><td>1,000 videos = 20 requests, about 2 minutes</td></tr>
+            <tr><td><b>Translate with AI</b></td><td>The text of comments <b>not in English letters</b>, <b>40 per request</b>. Each comment is cut at 500 letters.</td><td>1 per 40 comments</td><td>1,000 comments = 25 requests, about 3 minutes</td></tr>
+          </tbody>
+        </table>
+        <div class="tag">The app waits 6 seconds between requests, so it never sends more than 10 a minute. Token counts are rough: English is about 1 token per 4 letters, and Bangla and other scripts use noticeably more. If the service says you reached its free limit, the app stops with a message and keeps what it already did. Translation continues where it left off.</div>
+      </div>
+
+      <div class="cols2 reveal">
+        <div>
+          <h3>Never sent</h3>
+          <ul class="use">
+            <li><span>Your YouTube API keys</span></li>
+            <li><span>Comments you don’t translate, or any comment at all while you don’t press Translate</span></li>
+            <li><span>View counts, likes, descriptions, or your downloaded files</span></li>
+            <li><span>Anything at all, unless you press one of the three buttons</span></li>
+          </ul>
+        </div>
+        <div>
+          <h3>Make your free tokens last</h3>
+          <ul class="use">
+            <li><span>Use the free keyword rules first, so the AI checks fewer videos</span></li>
+            <li><span>Run <b>Clean comments</b> before translating: it is free, and it drops spam and duplicates first</span></li>
+            <li><span>If you don’t need English text, keep or remove non-English comments instead of translating</span></li>
+            <li><span>Check your key’s limits on your Gemini or OpenRouter account page; they change from time to time</span></li>
+          </ul>
+        </div>
       </div>
     </div>
   </section>
