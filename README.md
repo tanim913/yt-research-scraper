@@ -54,6 +54,8 @@ Existing comment scrapers start from videos you already have. The slow part of r
 
 ## Download the app
 
+The project page is built from [site/index.html](site/index.html) and published by GitHub Pages ([pages.yml](.github/workflows/pages.yml)).
+
 No Node.js needed. Get the file for your system from the [latest release](https://github.com/tanim913/yt-research-scraper/releases/latest) and open it. It starts the app and opens it in your browser; keep its window open while you work.
 
 | System | File |
