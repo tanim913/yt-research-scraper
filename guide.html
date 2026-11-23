@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>User Guide · YouTube Research Scraper</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Barlow:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --table: #eef1f2; --sheet: #ffffff; --ink: #141414; --ink-2: #485056; --ink-3: #646d73;
+    --rule: #d5dadd; --rule-strong: #b9c0c4; --film: #141414; --film-2: #262626;
+    --edge: #f0a23b; --grease: #d3262c; --grease-dark: #ae1d22; --warn: #9a5a00;
+    --font: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --cond: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+    --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    --r: 3px;
+    --sprocket: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='8'%3E%3Crect x='3' y='1' width='8' height='6' rx='1.6' fill='%23eef1f2'/%3E%3C/svg%3E");
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { scroll-behavior: smooth; scroll-padding-top: 24px; scrollbar-color: var(--rule-strong) transparent; }
+  body { margin: 0; background: var(--table); color: var(--ink); font: 400 16px/1.6 var(--font); font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; }
+  ::selection { background: var(--edge); color: var(--ink); }
+  a { color: inherit; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+  a:hover { color: var(--grease); }
+  :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .icon { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+  /* film rebate */
+  .rebate { background: var(--film); color: #f2f2f2; position: relative; }
+  .rebate::before, .rebate::after { content: ""; position: absolute; left: 0; right: 0; height: 8px; background: var(--sprocket) repeat-x; }
+  .rebate::before { top: 4px; } .rebate::after { bottom: 4px; }
+  .edge { font: 600 13px/1 var(--cond); letter-spacing: .08em; text-transform: uppercase; color: var(--edge); }
+  header.rebate { padding: 20px 0; }
+  .head { display: flex; align-items: center; gap: 16px 28px; flex-wrap: wrap; max-width: 1240px; margin: 0 auto; padding: 0 24px; }
+  .brand { font: 600 22px/1 var(--cond); letter-spacing: .02em; color: #fff; margin: 0; white-space: nowrap; text-decoration: none; }
+  .brand b { color: var(--edge); font-weight: 600; }
+  .head .edge { margin: 0; }
+  .head .btn { margin-left: auto; }
+
+  .btn { display: inline-flex; align-items: center; gap: 8px; border: 1px solid transparent; border-radius: var(--r); padding: 9px 16px; font: 600 14.5px/1.2 var(--font); cursor: pointer; background: var(--grease); color: #fff; text-decoration: none; white-space: nowrap; transition: background .15s, border-color .15s; }
+  .btn:hover { background: var(--grease-dark); color: #fff; }
+  .btn.quiet { background: var(--sheet); color: var(--ink); border-color: var(--rule-strong); }
+  .btn.quiet:hover { border-color: var(--ink); color: var(--ink); }
+  .btn.small { padding: 5px 9px; font-size: 13px; }
+
+  /* intro + question strip */
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 24px; }
+  .intro { padding: 44px 0 26px; }
+  h1 { font-size: 40px; line-height: 1.05; font-weight: 600; margin: 0 0 12px; letter-spacing: -.01em; text-wrap: balance; }
+  .intro p { margin: 0; font-size: 18px; color: var(--ink-2); }
+  .strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); row-gap: 18px; margin-bottom: 56px; }
+  .q { position: relative; display: flex; flex-direction: column; background: var(--film); color: #fff; text-decoration: none; padding: 15px 7px 0; min-height: 168px; }
+  .q::before, .q::after { content: ""; position: absolute; left: 0; right: 0; height: 8px; background: var(--sprocket) repeat-x; }
+  .q::before { top: 4px; } .q::after { bottom: 4px; }
+  .q .well { flex: 1; background: var(--film-2); padding: 18px 26px; display: flex; align-items: center; justify-content: center; text-align: center; }
+  .q .well span { font: 600 19px/1.3 var(--font); text-wrap: balance; }
+  .q .edge { display: flex; justify-content: space-between; padding: 6px 1px 17px; font-size: 12px; }
+  .q svg.ring { position: absolute; left: 3px; top: 11px; width: calc(100% - 6px); height: calc(100% - 42px); pointer-events: none; overflow: visible; }
+  .q svg.ring path { fill: none; stroke: var(--grease); stroke-width: 3.2; stroke-linecap: round; vector-effect: non-scaling-stroke; stroke-dasharray: 1400; stroke-dashoffset: 1400; opacity: 0; transition: stroke-dashoffset .26s cubic-bezier(.3,.7,.2,1), opacity .1s; }
+  .q:hover svg.ring path, .q:focus-visible svg.ring path { stroke-dashoffset: 0; opacity: 1; }
+  .q:hover { color: #fff; }
+  .q:focus-visible { outline-offset: 3px; }
+
+  /* body: contents rail + sheet */
+  .doc { padding-bottom: 80px; }
+  .after { margin: -36px 0 40px; font-size: 15px; color: var(--ink-2); }
+  .toq { margin-left: auto; font: 600 13px/1 var(--cond); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); text-decoration: none; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .toq .icon { width: 15px; height: 15px; }
+  .toq:hover { color: var(--grease); }
+
+  .sheet { background: var(--sheet); border: 1px solid var(--rule); }
+  section.ch { padding: 40px 48px 44px; border-top: 1px solid var(--rule); }
+  section.ch:first-child { border-top: 0; }
+  .chhead { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+  .chhead .n { width: 34px; height: 34px; display: grid; place-items: center; background: var(--film); color: var(--edge); border-radius: var(--r); font: 600 18px/1 var(--cond); flex: none; }
+  h2 { font-size: 26px; line-height: 1.15; font-weight: 600; margin: 0; text-wrap: balance; }
+  h3 { font-size: 18px; line-height: 1.25; font-weight: 600; margin: 30px 0 8px; }
+  .prose { max-width: 70ch; }
+  .prose p, .prose li { color: var(--ink-2); }
+  .prose p { margin: 0 0 14px; }
+  .prose strong, .prose b { color: var(--ink); font-weight: 600; }
+  .lede { font-size: 17.5px; color: var(--ink) !important; }
+  ol.steps { margin: 6px 0 18px; padding: 0; list-style: none; counter-reset: s; display: grid; gap: 12px; }
+  ol.steps > li { counter-increment: s; display: grid; grid-template-columns: 30px 1fr; gap: 12px; align-items: start; }
+  ol.steps > li::before { content: counter(s); font: 600 19px/1.35 var(--cond); color: var(--ink); text-align: right; }
+  ul.plain { margin: 0 0 16px; padding-left: 20px; display: grid; gap: 6px; }
+  kbd { font: 500 13px/1 var(--mono); border: 1px solid var(--rule-strong); border-radius: var(--r); padding: 2px 5px; background: var(--sheet); color: var(--ink); }
+  code { font: 500 14px/1 var(--mono); background: #f1f3f4; padding: 2px 5px; border-radius: 2px; color: var(--ink); }
+
+  /* code on film */
+  .cmd { display: flex; align-items: center; gap: 12px; background: var(--film); color: #f2f2f2; border-radius: var(--r); padding: 12px 12px 12px 16px; margin: 6px 0 18px; max-width: 70ch; }
+  .cmd code { min-width: 0; background: none; color: #fff; padding: 0; font-size: 14.5px; flex: 1; overflow-x: auto; white-space: pre; line-height: 1.5; }
+  .cmd .copy { background: var(--film-2); color: #e6e6e6; border: 1px solid #4a4a4a; border-radius: var(--r); padding: 5px 10px; font: 600 13px/1 var(--font); cursor: pointer; }
+  .cmd .copy:hover { border-color: var(--edge); color: #fff; }
+
+  /* note (no side stripe) */
+  .note { display: grid; grid-template-columns: 22px 1fr; gap: 10px; background: #f6f7f8; border: 1px solid var(--rule); border-radius: var(--r); padding: 12px 14px; margin: 4px 0 18px; max-width: 70ch; font-size: 15px; color: var(--ink-2); }
+  .note .icon { color: var(--ink); margin-top: 3px; }
+  .note b { color: var(--ink); }
+  .note.warn .icon { color: var(--warn); }
+
+  /* tables */
+  .tbl { width: 100%; max-width: 78ch; border-collapse: collapse; margin: 6px 0 20px; font-size: 15px; }
+  .tbl th { text-align: left; font: 600 12px/1.2 var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); padding: 8px 12px 8px 0; border-bottom: 1px solid var(--ink); }
+  .tbl td { padding: 10px 12px 10px 0; border-bottom: 1px solid var(--rule); vertical-align: top; color: var(--ink-2); }
+  .tbl td:first-child { color: var(--ink); font-weight: 600; white-space: nowrap; }
+  .tbl td.num { font: 600 15px/1.3 var(--cond); letter-spacing: .03em; color: var(--ink); white-space: nowrap; }
+  .tbl code { font-size: 13px; }
+  .scrollx { overflow-x: auto; }
+
+  /* figures: the app's own parts, drawn small */
+  figure { margin: 10px 0 24px; }
+  figcaption { font-size: 13.5px; color: var(--ink-3); margin-top: 8px; max-width: 70ch; }
+  .fig-frames { display: grid; grid-template-columns: repeat(3, 200px); gap: 0; background: var(--table); padding: 18px; border: 1px solid var(--rule); width: max-content; max-width: 100%; overflow-x: auto; }
+  .mf { display: flex; flex-direction: column; background: var(--sheet); }
+  .mf .film { position: relative; background: var(--film); padding: 15px 7px 0; }
+  .mf .film::before, .mf .film::after { content: ""; position: absolute; left: 0; right: 0; height: 8px; background: var(--sprocket) repeat-x; }
+  .mf .film::before { top: 4px; } .mf .film::after { bottom: 4px; }
+  .mf .shot { aspect-ratio: 16 / 9; background: var(--film-2); position: relative; }
+  .mf .shot::after { content: attr(data-len); position: absolute; right: 5px; bottom: 5px; font: 600 12px/1 var(--cond); color: #fff; background: rgba(20,20,20,.86); padding: 3px 5px; border-radius: 2px; }
+  .mf .edge { display: flex; justify-content: space-between; padding: 6px 1px 17px; font-size: 12px; }
+  .mf svg { position: absolute; left: 1px; right: 1px; top: 9px; width: calc(100% - 2px); height: calc(100% - 34px); overflow: visible; }
+  .mf svg path { fill: none; stroke: var(--grease); stroke-width: 3.2; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+  .mf.out .shot { opacity: .45; }
+  .mf .cap { padding: 9px 10px 11px; display: grid; gap: 3px; border-right: 1px solid var(--table); }
+  .mf .cap b { font-size: 13.5px; font-weight: 500; line-height: 1.3; }
+  .mf .cap span { font: 500 12.5px/1.2 var(--cond); letter-spacing: .03em; color: var(--ink-2); }
+  .mf .bar { height: 3px; background: var(--rule); position: relative; margin-top: 3px; }
+  .mf .bar i { position: absolute; inset: 0 auto 0 0; background: var(--grease); }
+  .mf.out .bar i { background: var(--ink-3); }
+  .mf.out .cap b { color: var(--ink-3); }
+
+  .fig-roll { background: var(--film); padding: 22px 20px; position: relative; display: grid; gap: 8px; max-width: 520px; }
+  .fig-roll::before, .fig-roll::after { content: ""; position: absolute; left: 0; right: 0; height: 8px; background: var(--sprocket) repeat-x; }
+  .fig-roll::before { top: 4px; } .fig-roll::after { bottom: 4px; }
+  .frames { display: grid; grid-template-columns: repeat(20, 14px); gap: 3px; }
+  .frames i { height: 11px; border: 1px solid var(--edge); border-radius: 1px; background: var(--edge); }
+  .frames i.used { background: transparent; border-color: #4a4a4a; }
+
+  .fig-strip { background: var(--film); padding: 22px 20px 16px; position: relative; display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: center; max-width: 720px; }
+  .fig-strip::before { content: ""; position: absolute; left: 0; right: 0; top: 4px; height: 8px; background: var(--sprocket) repeat-x; }
+  .fig-strip .tally b { display: block; font: 600 20px/1 var(--cond); color: #fff; }
+  .fig-strip .tally span { font-size: 12.5px; color: #bdbdbd; }
+  .fig-strip .track { height: 8px; background: #3a3a3a; position: relative; }
+  .fig-strip .track i { position: absolute; inset: 0 auto 0 0; background: var(--edge); }
+  .fig-strip.over .track i { background: var(--grease); }
+  .fig-strip small { display: block; margin-top: 6px; font-size: 12.5px; color: #c9c9c9; }
+  .fig-strip.over small { color: #ffb4b0; }
+  .fig-strip .fakebtn { background: var(--grease); color: #fff; border-radius: var(--r); padding: 9px 14px; font: 600 14px/1 var(--font); white-space: nowrap; }
+
+  .fig-key { background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--r); padding: 10px 12px; display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; max-width: 380px; }
+  .fig-key b { font-size: 14px; font-weight: 600; } .fig-key b span { font: 400 14px var(--cond); color: var(--ink-3); letter-spacing: .04em; }
+  .fig-key .bar { height: 4px; background: var(--rule); } .fig-key .bar i { display: block; height: 100%; width: 74%; background: var(--film); }
+  .fig-key small { font-size: 12.5px; color: var(--ink-3); }
+  .fig-key .icon { grid-column: 2; grid-row: 1 / span 3; color: var(--ink-2); }
+  .fig-seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--rule-strong); border-radius: var(--r); overflow: hidden; max-width: 380px; background: var(--sheet); }
+  .fig-seg span { padding: 9px 10px; display: grid; gap: 1px; }
+  .fig-seg span + span { border-left: 1px solid var(--rule-strong); }
+  .fig-seg b { font-size: 14px; font-weight: 600; } .fig-seg small { font-size: 12px; color: var(--ink-3); }
+  .fig-seg .on { background: var(--film); color: #fff; } .fig-seg .on b { color: #fff; } .fig-seg .on small { color: var(--edge); }
+  .status { display: inline-flex; align-items: center; gap: 6px; font: 600 13px/1 var(--cond); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+  .status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .s-running, .s-error { color: var(--grease); } .s-queued, .s-cancelled { color: var(--ink-3); } .s-paused { color: var(--warn); } .s-done { color: var(--ink); }
+
+  /* troubleshooting */
+  .faults { display: grid; gap: 0; border-top: 1px solid var(--ink); max-width: 78ch; margin-top: 8px; }
+  details.fault { border-bottom: 1px solid var(--rule); }
+  details.fault summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: 1fr 18px; gap: 12px; align-items: center; padding: 14px 0; font-weight: 600; color: var(--ink); }
+  details.fault summary::-webkit-details-marker { display: none; }
+  details.fault summary .icon { color: var(--ink-3); transition: transform .2s cubic-bezier(.2,.7,.2,1); }
+  details.fault[open] summary .icon { transform: rotate(180deg); }
+  details.fault summary:hover { color: var(--grease); }
+  details.fault .ans { padding: 0 0 16px; color: var(--ink-2); max-width: 70ch; }
+  details.fault .ans p { margin: 0 0 10px; }
+  .says { font: 500 14px/1.4 var(--mono); color: var(--ink); background: #f1f3f4; padding: 2px 6px; border-radius: 2px; }
+
+  /* template */
+  .template { background: #f6f7f8; border: 1px solid var(--rule); border-radius: var(--r); padding: 18px 20px; max-width: 74ch; position: relative; }
+  .template p { margin: 0; color: var(--ink); font-size: 15.5px; }
+  .template .blank { font-style: italic; color: var(--grease); }
+  .template .btn { margin-top: 14px; }
+
+  footer.end { padding: 30px 0 50px; color: var(--ink-3); font-size: 14px; display: flex; gap: 16px; flex-wrap: wrap; justify-content: space-between; }
+
+  #toast { position: fixed; right: 20px; bottom: 20px; background: var(--film); color: #fff; padding: 10px 14px; border-radius: var(--r); font-size: 14px; opacity: 0; transform: translateY(6px); transition: opacity .2s, transform .2s; pointer-events: none; }
+  #toast.on { opacity: 1; transform: none; }
+
+  @media (max-width: 980px) {
+    .strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      section.ch { padding: 32px 24px 36px; }
+  }
+  @media (max-width: 560px) {
+    .wrap { padding: 0 16px; }
+    .head { padding: 0 16px; }
+    .head .btn { margin-left: 0; }
+    h1 { font-size: 32px; }
+    .intro { padding-top: 32px; }
+    .intro p { font-size: 17px; }
+    .q { min-height: 140px; }
+    .q .well span { font-size: 16.5px; }
+    section.ch { padding: 28px 16px 32px; }
+    h2 { font-size: 22px; }
+    .fig-frames { grid-template-columns: repeat(2, minmax(0, 1fr)); width: auto; padding: 12px; }
+    .fig-frames .mf:nth-child(3) { display: none; }
+    .fig-strip { grid-template-columns: 1fr; }
+    .frames { grid-template-columns: repeat(20, minmax(0, 1fr)); }
+    .sheet { border-left: 0; border-right: 0; }
+    .doc { margin: 0 -16px; }
+    .after { margin-top: -28px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.6v.4"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3l10 18H2zM12 10v5M12 18v.4"/></symbol>
+  <symbol id="i-app" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></symbol>
+</svg>
+
+<header class="rebate">
+  <div class="head">
+    <a class="brand" href="/">YouTube <b>Research</b> Scraper</a>
+    <p class="edge">User guide</p>
+    <a class="btn" href="/"><svg class="icon"><use href="#i-app"/></svg>Open the app</a>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="intro">
+    <h1>How to build a comment dataset</h1>
+    <p>Find videos by your research rules, keep the right ones, and save every comment as a spreadsheet.</p>
+  </div>
+
+  <nav class="strip" id="questions" aria-label="Common questions">
+    <a class="q" href="#start"><span class="well"><span>How do I start the app?</span></span><span class="edge"><span>1</span><span>Setup</span></span><svg class="ring" viewBox="0 0 200 120" preserveAspectRatio="none" aria-hidden="true"><path d="M100 6 C158 4 196 26 194 60 C192 98 142 116 96 114 C44 112 6 94 7 58 C8 24 50 6 116 11"/></svg></a>
+    <a class="q" href="#keys"><span class="well"><span>How do I get an API key?</span></span><span class="edge"><span>2</span><span>Keys</span></span><svg class="ring" viewBox="0 0 200 120" preserveAspectRatio="none" aria-hidden="true"><path d="M100 6 C158 4 196 26 194 60 C192 98 142 116 96 114 C44 112 6 94 7 58 C8 24 50 6 116 11"/></svg></a>
+    <a class="q" href="#find"><span class="well"><span>How do I find videos from my channels?</span></span><span class="edge"><span>3</span><span>Find</span></span><svg class="ring" viewBox="0 0 200 120" preserveAspectRatio="none" aria-hidden="true"><path d="M100 6 C158 4 196 26 194 60 C192 98 142 116 96 114 C44 112 6 94 7 58 C8 24 50 6 116 11"/></svg></a>
+    <a class="q" href="#rules"><span class="well"><span>How do the research rules work?</span></span><span class="edge"><span>4</span><span>Rules</span></span><svg class="ring" viewBox="0 0 200 120" preserveAspectRatio="none" aria-hidden="true"><path d="M100 6 C158 4 196 26 194 60 C192 98 142 116 96 114 C44 112 6 94 7 58 C8 24 50 6 116 11"/></svg></a>
+    <a class="q" href="#review"><span class="well"><span>How do I choose which videos to scrape?</span></span><span class="edge"><span>5</span><span>Review</span></span><svg class="ring" viewBox="0 0 200 120" preserveAspectRatio="none" aria-hidden="true"><path d="M100 6 C158 4 196 26 194 60 C192 98 142 116 96 114 C44 112 6 94 7 58 C8 24 50 6 116 11"/></svg></a>
+    <a class="q" href="#jobs"><span class="well"><span>Why did my job pause?</span></span><span class="edge"><span>6</span><span>Jobs</span></span><svg class="ring" viewBox="0 0 200 120" preserveAspectRatio="none" aria-hidden="true"><path d="M100 6 C158 4 196 26 194 60 C192 98 142 116 96 114 C44 112 6 94 7 58 C8 24 50 6 116 11"/></svg></a>
+    <a class="q" href="#files"><span class="well"><span>What is in the CSV files?</span></span><span class="edge"><span>7</span><span>Output</span></span><svg class="ring" viewBox="0 0 200 120" preserveAspectRatio="none" aria-hidden="true"><path d="M100 6 C158 4 196 26 194 60 C192 98 142 116 96 114 C44 112 6 94 7 58 C8 24 50 6 116 11"/></svg></a>
+    <a class="q" href="#trouble"><span class="well"><span>Something went wrong. What now?</span></span><span class="edge"><span>8</span><span>Fixes</span></span><svg class="ring" viewBox="0 0 200 120" preserveAspectRatio="none" aria-hidden="true"><path d="M100 6 C158 4 196 26 194 60 C192 98 142 116 96 114 C44 112 6 94 7 58 C8 24 50 6 116 11"/></svg></a>
+  </nav>
+  <p class="after">Writing up your paper? Use the <a href="#methods">methods-section template</a>.</p>
+
+  <div class="doc">
+    <main class="sheet">
+      <section class="ch" id="start">
+        <div class="chhead"><span class="n">1</span><h2>Start the app</h2><a class="toq" href="#questions"><svg class="icon"><use href="#i-up"/></svg>Questions</a></div>
+        <div class="prose">
+          <p class="lede">The scraper runs on your own computer. Your keys and data never leave it.</p>
+          <ol class="steps">
+            <li><span>Install <strong>Node.js 20 or newer</strong> from <a href="https://nodejs.org" target="_blank" rel="noopener">nodejs.org</a> (the “LTS” button). Nothing else needs installing.</span></li>
+            <li><span>Open a terminal in the scraper’s folder and run:</span></li>
+          </ol>
+          <div class="cmd"><code>node server.js</code><button class="copy" type="button">Copy</button></div>
+          <ol class="steps" start="3" style="counter-reset: s 2">
+            <li><span>Open <a href="http://127.0.0.1:3000">http://127.0.0.1:3000</a> in your browser. Keep the terminal open while you work; press <kbd>Ctrl</kbd> + <kbd>C</kbd> there to stop.</span></li>
+          </ol>
+          <div class="note"><svg class="icon"><use href="#i-info"/></svg><span>Stopping is safe. Jobs are saved after every page of results and carry on when you start the app again. Everything lives in the <code>data/</code> folder; <b>don’t share it</b>, because it contains your API keys.</span></div>
+        </div>
+      </section>
+
+      <section class="ch" id="keys">
+        <div class="chhead"><span class="n">2</span><h2>Get API keys</h2><a class="toq" href="#questions"><svg class="icon"><use href="#i-up"/></svg>Questions</a></div>
+        <div class="prose">
+          <p class="lede">The scraper uses YouTube’s official API. Each key is free and gives <strong>10,000 units a day</strong>.</p>
+          <div class="note"><svg class="icon"><use href="#i-info"/></svg><span><b>This is not an AI key.</b> You need a <b>YouTube Data API v3</b> key from Google Cloud. Keys from ChatGPT, Claude or Gemini won’t work, and no AI is used anywhere in the scraper.</span></div>
+          <ol class="steps">
+            <li><span>Go to <a href="https://console.cloud.google.com/projectcreate" target="_blank" rel="noopener">console.cloud.google.com</a>, sign in with any Google account, and create a project.</span></li>
+            <li><span>Open <strong>APIs &amp; Services → Library</strong>, search for <strong>YouTube Data API v3</strong>, and press <strong>Enable</strong>.</span></li>
+            <li><span>Open <strong>Credentials → Create credentials → API key</strong>, and copy the key (it starts with <code>AIza</code>).</span></li>
+            <li><span>In the app, paste it into <strong>step 1 · API keys</strong> and press <strong>Add key</strong>.</span></li>
+          </ol>
+          <figure>
+            <div class="fig-key" aria-hidden="true"><b>Lab project 1 <span>…a1b2c3</span></b><div class="bar"><i></i></div><small>7,400 of 10,000 left today</small><svg class="icon"><use href="#i-trash"/></svg></div>
+            <figcaption>An added key: its label, the last characters of the key, and what’s left of today’s units. The bin removes it.</figcaption>
+          </figure>
+          <div class="note warn"><svg class="icon"><use href="#i-warn"/></svg><span><b>More keys only help if they come from different projects.</b> Keys inside one project share that project’s 10,000 units. For extra quota, repeat the steps with a new project (teammates can each make one).</span></div>
+          <h3>How much quota do I need?</h3>
+          <p>Each unit is one request to YouTube. Rough costs:</p>
+          <div class="scrollx"><table class="tbl">
+            <thead><tr><th>What you do</th><th>Cost</th></tr></thead>
+            <tbody>
+              <tr><td>Find videos from channels</td><td class="num">~1 unit per 25 videos</td></tr>
+              <tr><td>Search all of YouTube</td><td class="num">100 units per 50 results</td></tr>
+              <tr><td>Scrape comments</td><td class="num">~1 unit per 80–100 comments</td></tr>
+              <tr><td>Changing research rules</td><td class="num">Free</td></tr>
+            </tbody>
+          </table></div>
+          <p>For example, about 86,000 comments from three news channels is roughly 1,000 units for the comments plus a few hundred to scan the channels, which fits inside one key’s day. Search mode is where quota disappears fast.</p>
+        </div>
+      </section>
+
+      <section class="ch" id="find">
+        <div class="chhead"><span class="n">3</span><h2>Find videos</h2><a class="toq" href="#questions"><svg class="icon"><use href="#i-up"/></svg>Questions</a></div>
+        <div class="prose">
+          <p class="lede">Step 2 in the app decides where the scraper looks. Pick one of two ways.</p>
+          <figure>
+            <div class="fig-seg" aria-hidden="true"><span class="on"><b>From channels</b><small>Cheap: ~1 unit per 25 videos</small></span><span><b>Search YouTube</b><small>Costly: 100 units per 50</small></span></div>
+            <figcaption>The switch at the top of step 2. The dark half is the one selected.</figcaption>
+          </figure>
+          <h3>From channels (recommended)</h3>
+          <p>List the channels you study, one per line. Any of these forms work:</p>
+          <div class="cmd"><code>@BBCNews
+https://www.youtube.com/@aljazeeraenglish
+https://www.youtube.com/channel/UC16niRr50-MSBwiO3YDb3RA</code></div>
+          <p>Set <strong>Published from</strong> and <strong>until</strong> to your study period. The scraper reads each channel’s uploads from newest to oldest and stops once it passes your start date, which keeps it cheap.</p>
+          <h3>Search YouTube</h3>
+          <p>Type search words, for example <em>russia ukraine war</em>. Use this when you don’t know which channels matter. It costs 100 units per 50 results, and the app shows the cost before you start. YouTube returns at most about 500 results per search.</p>
+          <h3>While it runs</h3>
+          <p>Name the collection (so you can find it later) and press <strong>Find videos</strong>. Frames appear on the contact sheet as videos arrive; you can already adjust your rules while you wait.</p>
+        </div>
+      </section>
+
+      <section class="ch" id="rules">
+        <div class="chhead"><span class="n">4</span><h2>Research rules</h2><a class="toq" href="#questions"><svg class="icon"><use href="#i-up"/></svg>Questions</a></div>
+        <div class="prose">
+          <p class="lede">Rules decide which of the found videos stay on the sheet. They run on your computer, so <strong>changing them is instant and free</strong>. Leave a box empty to switch that rule off.</p>
+          <div class="scrollx"><table class="tbl">
+            <thead><tr><th>Rule</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td>Must mention</td><td>Keeps videos whose title, description or tags contain your words. Separate words with commas. Choose <em>at least one word</em> or <em>every word</em>.</td></tr>
+              <tr><td>Must not mention</td><td>Removes videos that contain any of these words.</td></tr>
+              <tr><td>Views, comments, likes</td><td>Minimum and maximum. For example, at least 100 comments.</td></tr>
+              <tr><td>Discussion level</td><td>Comments per 1,000 views. Finds videos people actually argued about.</td></tr>
+              <tr><td>Length</td><td>In minutes.</td></tr>
+              <tr><td>Language</td><td>Such as <code>en</code> or <code>bn</code>. Only removes videos whose uploader set a <em>different</em> language; videos with no language set are kept.</td></tr>
+              <tr><td>Category</td><td>For example News &amp; Politics.</td></tr>
+              <tr><td>Skip Shorts</td><td>Removes videos of 60 seconds or less, and any tagged #shorts.</td></tr>
+              <tr><td>Skip comments off</td><td>Removes videos where comments are turned off. They have nothing to scrape.</td></tr>
+              <tr><td>Skip live streams, kids’ videos</td><td>Removes live or scheduled streams, and videos marked made for kids.</td></tr>
+            </tbody>
+          </table></div>
+          <p><strong>Save your rule set</strong> under <em>Saved rule sets</em> so you can reuse exactly the same rules later, and quote them in your methods section. Rule sets are saved in this browser.</p>
+        </div>
+      </section>
+
+      <section class="ch" id="review">
+        <div class="chhead"><span class="n">5</span><h2>Review and scrape</h2><a class="toq" href="#questions"><svg class="icon"><use href="#i-up"/></svg>Questions</a></div>
+        <div class="prose">
+          <p class="lede">Every video that passes your rules appears as a frame, circled in red. Circled frames get scraped.</p>
+        </div>
+        <figure>
+          <div class="fig-frames" aria-hidden="true">
+            <div class="mf"><div class="film"><div class="shot" data-len="12:04"></div><div class="edge"><span>1</span><span>2023-03-02</span></div><svg viewBox="0 0 200 120" preserveAspectRatio="none"><path d="M100 6 C158 4 196 26 194 60 C192 98 142 116 96 114 C44 112 6 94 7 58 C8 24 50 6 116 11"/></svg></div><div class="cap"><b>Front line update</b><span>1.2M views · 4,200 comments</span><div class="bar"><i style="width:34%"></i></div></div></div>
+            <div class="mf out"><div class="film"><div class="shot" data-len="0:41"></div><div class="edge"><span>1A</span><span>2023-07-01</span></div><svg viewBox="0 0 200 120" preserveAspectRatio="none"><path d="M24 16 L178 104 M180 14 L22 106"/></svg></div><div class="cap"><b>Drone footage clip</b><span>500K views · 900 comments</span><div class="bar"><i style="width:7%"></i></div></div></div>
+            <div class="mf"><div class="film"><div class="shot" data-len="40:00"></div><div class="edge"><span>2</span><span>2023-02-09</span></div><svg viewBox="0 0 200 120" preserveAspectRatio="none"><path d="M100 6 C158 4 196 26 194 60 C192 98 142 116 96 114 C44 112 6 94 7 58 C8 24 50 6 116 11"/></svg></div><div class="cap"><b>Speech analysed</b><span>3.1M views · 12,400 comments</span><div class="bar"><i style="width:100%"></i></div></div></div>
+          </div>
+          <figcaption>Circled frames will be scraped; the crossed-out one won’t. The red bar under each frame compares comment counts on the same scale across the whole sheet. Illustration with made-up videos.</figcaption>
+        </figure>
+        <div class="prose">
+          <ul class="plain">
+            <li><strong>Click a frame</strong> to cross it out. Click again to circle it back. Click the title to open the video on YouTube.</li>
+            <li><strong>Sort</strong> by date, comments, views or length; <strong>Circle all</strong> and <strong>Clear all</strong> act on every matching video.</li>
+            <li><strong>videos.csv</strong> saves the list of matching videos with their numbers, which is useful for your dataset table.</li>
+          </ul>
+          <h3>The strip at the bottom</h3>
+          <p>It always shows what scraping your circled videos will cost against what’s left today.</p>
+        </div>
+        <figure>
+          <div class="fig-strip" aria-hidden="true"><div class="tally"><b>38 circled</b><span>about 41,000 comments</span></div><div><div class="track"><i style="width:22%"></i></div><small>Uses ~560 of 2,600 units left today.</small></div><span class="fakebtn">Scrape comments</span></div>
+          <figcaption>Amber means it fits in today’s quota. If the bar turns red, the job still runs: it pauses when quota runs out and finishes after the reset.</figcaption>
+        </figure>
+        <div class="prose">
+          <p>Before pressing <strong>Scrape comments</strong>, choose:</p>
+          <ul class="plain">
+            <li><strong>Order:</strong> Top comments (YouTube’s relevance order) or Newest.</li>
+            <li><strong>Max per video:</strong> leave it empty to get all comments, or set a cap such as 500 to keep big videos from dominating.</li>
+            <li><strong>All replies:</strong> YouTube only includes up to 5 replies per comment. Tick this to fetch every reply (costs more).</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="ch" id="jobs">
+        <div class="chhead"><span class="n">6</span><h2>Jobs and quota</h2><a class="toq" href="#questions"><svg class="icon"><use href="#i-up"/></svg>Questions</a></div>
+        <div class="prose">
+          <p class="lede">Every search and every scrape is a job in the <strong>Jobs</strong> list. Jobs run one at a time, in order.</p>
+          <div class="scrollx"><table class="tbl">
+            <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
+            <tbody>
+              <tr><td><span class="status s-queued">Waiting</span></td><td>In line behind another job.</td></tr>
+              <tr><td><span class="status s-running">Running</span></td><td>Working now. For scrapes you can download the CSV already.</td></tr>
+              <tr><td><span class="status s-paused">Paused</span></td><td>Every key ran out of quota. It continues by itself after the reset, or as soon as you add a key from another project.</td></tr>
+              <tr><td><span class="status s-done">Done</span></td><td>Finished. Open it (search) or download comments.csv (scrape).</td></tr>
+              <tr><td><span class="status s-error">Error</span></td><td>Something failed, for example the internet dropped. Press <strong>Resume</strong> to try again from where it stopped.</td></tr>
+              <tr><td><span class="status s-cancelled">Cancelled</span></td><td>You stopped it. Resume is still possible.</td></tr>
+            </tbody>
+          </table></div>
+          <h3>Reading the quota</h3>
+          <p>The black strip at the top of the app shows today’s quota as 20 frames. Lit frames are what’s left across all your keys.</p>
+        </div>
+        <figure>
+          <div class="fig-roll" aria-hidden="true"><div class="frames"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="used"></i><i class="used"></i><i class="used"></i><i class="used"></i><i class="used"></i><i class="used"></i><i class="used"></i><i class="used"></i><i class="used"></i><i class="used"></i><i class="used"></i><i class="used"></i></div><span class="edge">7,500 units left · 2 keys · resets 2:00 PM · in 21h 28m</span></div>
+          <figcaption>8 of 20 frames lit: a bit over a third of today’s quota is left.</figcaption>
+        </figure>
+        <div class="prose">
+          <p>Quota resets at <strong>midnight Pacific time</strong>; the app shows that moment in your own time (around 1–2 PM in Bangladesh). Nothing is lost when quota runs out: the job saves its place and continues.</p>
+        </div>
+      </section>
+
+      <section class="ch" id="files">
+        <div class="chhead"><span class="n">7</span><h2>The CSV files</h2><a class="toq" href="#questions"><svg class="icon"><use href="#i-up"/></svg>Questions</a></div>
+        <div class="prose">
+          <p class="lede">Both files open in Excel, Google Sheets, or Python. Bangla, Russian and other scripts display correctly.</p>
+          <h3>comments.csv</h3>
+          <p>One row per comment or reply. Download it from <strong>Jobs</strong>.</p>
+          <div class="scrollx"><table class="tbl">
+            <thead><tr><th>Column</th><th>Contains</th></tr></thead>
+            <tbody>
+              <tr><td><code>video_id</code>, <code>video_title</code>, <code>channel</code></td><td>Which video the comment is from.</td></tr>
+              <tr><td><code>comment_id</code></td><td>YouTube’s ID for the comment.</td></tr>
+              <tr><td><code>parent_id</code>, <code>is_reply</code></td><td>For replies: <code>is_reply</code> is 1 and <code>parent_id</code> is the comment it answers. Empty and 0 for top-level comments.</td></tr>
+              <tr><td><code>author</code>, <code>text</code></td><td>Display name and the comment text exactly as written.</td></tr>
+              <tr><td><code>like_count</code>, <code>published_at</code></td><td>Likes, and the time posted (UTC).</td></tr>
+              <tr><td><code>reply_count</code></td><td>How many replies a top-level comment has.</td></tr>
+            </tbody>
+          </table></div>
+          <h3>videos.csv</h3>
+          <p><code>video_id</code>, <code>url</code>, <code>title</code>, <code>channel</code>, <code>published_at</code>, <code>views</code>, <code>likes</code>, <code>comments</code>, <code>duration_s</code>, <code>language</code>, <code>tags</code>. Numbers are as they were when the videos were found.</p>
+          <h3>Open it in Python</h3>
+          <div class="cmd"><code>import pandas as pd
+df = pd.read_csv("comments.csv")
+top_level = df[df.is_reply == 0]</code><button class="copy" type="button">Copy</button></div>
+          <div class="note warn"><svg class="icon"><use href="#i-warn"/></svg><span><b>Excel tip:</b> a comment that starts with <code>=</code>, <code>+</code>, <code>-</code> or <code>@</code> may be read as a formula. For analysis, use Python or Google Sheets’ import, which keep the text as it is.</span></div>
+        </div>
+      </section>
+
+      <section class="ch" id="trouble">
+        <div class="chhead"><span class="n">8</span><h2>Troubleshooting</h2><a class="toq" href="#questions"><svg class="icon"><use href="#i-up"/></svg>Questions</a></div>
+        <div class="prose"><p class="lede">Find what you see, then open it.</p></div>
+        <div class="faults">
+          <details class="fault"><summary>A key says “Invalid key. Check it was copied fully”<svg class="icon"><use href="#i-chev"/></svg></summary><div class="ans"><p>The key was cut off or mistyped. Copy it again from Credentials in Google Cloud, remove the old one with the bin button, and add it again.</p></div></details>
+          <details class="fault"><summary>A key says “YouTube Data API v3 is not enabled”<svg class="icon"><use href="#i-chev"/></svg></summary><div class="ans"><p>The key’s project hasn’t enabled the API. Open APIs &amp; Services → Library in that project, enable <strong>YouTube Data API v3</strong>, then remove and re-add the key.</p></div></details>
+          <details class="fault"><summary>The Jobs list says “Channel not found”<svg class="icon"><use href="#i-chev"/></svg></summary><div class="ans"><p>Check the handle on the channel’s page; it’s the part after <code>@</code> in the link. Old links like <code>youtube.com/c/Name</code> sometimes don’t match a handle; open the channel and copy the link from the address bar instead.</p></div></details>
+          <details class="fault"><summary>A video was “skipped: comments are off”<svg class="icon"><use href="#i-chev"/></svg></summary><div class="ans"><p>The uploader turned comments off, so there is nothing to collect. The job moves on to the next video. Keep <strong>Skip comments off</strong> ticked to avoid picking these.</p></div></details>
+          <details class="fault"><summary>Everything is paused / “All keys are out of quota”<svg class="icon"><use href="#i-chev"/></svg></summary><div class="ans"><p>Today’s quota is used up. Leave the app running and it continues after the reset, or add a key from another Google Cloud project to continue right away.</p></div></details>
+          <details class="fault"><summary>No videos match my rules<svg class="icon"><use href="#i-chev"/></svg></summary><div class="ans"><p>Loosen one rule at a time; it costs nothing. Common culprits: <strong>Must mention</strong> set to <em>every word</em>, a high minimum comment count, or a language code when the channel doesn’t set one.</p></div></details>
+          <details class="fault"><summary>The terminal says the port is already in use<svg class="icon"><use href="#i-chev"/></svg></summary><div class="ans"><p>The app is probably already running in another terminal; open <a href="http://127.0.0.1:3000">127.0.0.1:3000</a>. Or start it on another port:</p><div class="cmd"><code>PORT=4000 node server.js</code><button class="copy" type="button">Copy</button></div></div></details>
+          <details class="fault"><summary>An old video I expected is missing from a big channel<svg class="icon"><use href="#i-chev"/></svg></summary><div class="ans"><p>YouTube only lists about the latest 20,000 uploads of a channel. For older videos on very large channels, use <strong>Search YouTube</strong> with a date range for that period.</p></div></details>
+          <details class="fault"><summary>The numbers differ from what YouTube shows now<svg class="icon"><use href="#i-chev"/></svg></summary><div class="ans"><p>Views and comment counts are recorded when the videos were found. Run <strong>Find videos</strong> again for fresh numbers, and note the collection date in your paper.</p></div></details>
+        </div>
+      </section>
+
+      <section class="ch" id="methods">
+        <div class="chhead"><span class="n">9</span><h2>Your methods section</h2><a class="toq" href="#questions"><svg class="icon"><use href="#i-up"/></svg>Questions</a></div>
+        <div class="prose">
+          <p class="lede">Reviewers will ask how videos were chosen. Your saved rule set is the answer. Here is a template to adapt; replace the red parts.</p>
+        </div>
+        <div class="template" id="tpl">
+          <p>Comments were collected through the YouTube Data API v3. Videos were drawn from the uploads of <span class="blank">[channels, e.g. BBC News, CNN and Al Jazeera English]</span> published between <span class="blank">[start date]</span> and <span class="blank">[end date]</span>. We kept videos whose title, description or tags mentioned <span class="blank">[keywords]</span>, with at least <span class="blank">[N]</span> comments, excluding Shorts (60 seconds or less) and videos with comments disabled. <span class="blank">[N]</span> of <span class="blank">[N]</span> candidate videos met these criteria after manual review, yielding <span class="blank">[N]</span> comments and replies collected on <span class="blank">[collection date]</span>.</p>
+          <button class="btn quiet small" type="button" id="copyTpl">Copy template</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer class="end"><span>YouTube Research Scraper · runs locally, uses the official YouTube Data API v3.</span><a href="/">Back to the app</a></footer>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+  const toast = (m) => { const t = document.getElementById('toast'); t.textContent = m; t.className = 'on'; clearTimeout(toast.t); toast.t = setTimeout(() => (t.className = ''), 2200); };
+  const copy = async (text) => { try { await navigator.clipboard.writeText(text); toast('Copied'); } catch { toast('Select the text and copy it by hand'); } };
+  document.querySelectorAll('.cmd .copy').forEach((b) => (b.onclick = () => copy(b.previousElementSibling.textContent)));
+  document.getElementById('copyTpl').onclick = () => copy(document.querySelector('#tpl p').textContent);
+
+</script>
+</body>
+</html>

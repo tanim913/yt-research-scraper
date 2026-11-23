@@ -1,0 +1,16 @@
+# Local data: API keys, quota, jobs, scraped CSVs. Never commit.
+data/
+
+# Node
+node_modules/
+
+# Environment and OS/editor files
+.env*
+.DS_Store
+.vscode/
+.idea/
+
+# Design working files (kept locally, not part of the release)
+.impeccable/
+PRODUCT.md
+DESIGN*.md

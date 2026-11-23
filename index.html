@@ -1,0 +1,756 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YouTube Research Scraper</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --table: #eef1f2;      /* light table */
+    --sheet: #ffffff;      /* print paper */
+    --ink: #141414;
+    --ink-2: #485056;
+    --ink-3: #646d73;
+    --rule: #d5dadd;
+    --rule-strong: #b9c0c4;
+    --film: #141414;
+    --film-2: #262626;
+    --edge: #f0a23b;       /* edge print amber */
+    --grease: #d3262c;     /* grease pencil */
+    --grease-dark: #ae1d22;
+    --warn: #9a5a00;
+    --font: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --cond: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+    --r: 3px;
+    --sprocket: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='8'%3E%3Crect x='3' y='1' width='8' height='6' rx='1.6' fill='%23eef1f2'/%3E%3C/svg%3E");
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { scrollbar-color: var(--rule-strong) transparent; }
+  body { margin: 0; background: var(--table); color: var(--ink); font: 400 15px/1.45 var(--font); font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; }
+  ::selection { background: var(--edge); color: var(--ink); }
+  a { color: inherit; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+  :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  button, input, select { font: inherit; color: inherit; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .icon { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+  /* ---------- film rebate (header + selection strip) ---------- */
+  .rebate { background: var(--film); color: #f2f2f2; position: relative; }
+  .rebate::before, .rebate::after { content: ""; position: absolute; left: 0; right: 0; height: 8px; background: var(--sprocket) repeat-x; }
+  .rebate::before { top: 4px; }
+  .rebate::after { bottom: 4px; }
+  .edge { font: 600 13px/1 var(--cond); letter-spacing: .08em; text-transform: uppercase; color: var(--edge); }
+  header.rebate { padding: 20px 20px; }
+  .head { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; }
+  .brand { font: 600 22px/1 var(--cond); letter-spacing: .02em; color: #fff; margin: 0; white-space: nowrap; }
+  .brand b { color: var(--edge); font-weight: 600; }
+  .roll { display: grid; gap: 7px; min-width: 0; }
+  .roll .edge { margin: 0; }
+  .frames { display: grid; grid-template-columns: repeat(20, 14px); gap: 3px; }
+  .frames i { height: 11px; border: 1px solid var(--edge); border-radius: 1px; background: var(--edge); transition: background .3s, border-color .3s; }
+  .frames i.used { background: transparent; border-color: #4a4a4a; }
+  .head .next { margin-left: auto; font-size: 14px; color: #dcdcdc; max-width: 420px; }
+  .head .next b { color: #fff; font-weight: 600; }
+  .head .guide { font: 600 13px/1 var(--cond); letter-spacing: .08em; text-transform: uppercase; color: var(--edge); text-decoration: none; border: 1px solid #4a4a4a; border-radius: var(--r); padding: 8px 10px; white-space: nowrap; }
+  .head .guide:hover { border-color: var(--edge); }
+
+  /* ---------- layout ---------- */
+  .layout { display: grid; grid-template-columns: minmax(330px, 390px) 1fr; align-items: start; }
+  aside.steps { background: var(--sheet); border-right: 1px solid var(--rule); position: sticky; top: 0; max-height: calc(100vh - 96px); overflow: auto; }
+  .desk { padding: 22px 24px 40px; min-width: 0; }
+
+  /* ---------- steps ---------- */
+  details.step { border-bottom: 1px solid var(--rule); }
+  details.step > summary { list-style: none; display: grid; grid-template-columns: 30px 1fr 18px; gap: 12px; align-items: center; padding: 16px 20px; cursor: pointer; }
+  details.step > summary::-webkit-details-marker { display: none; }
+  details.step > summary:hover { background: #f7f8f9; }
+  .num { width: 30px; height: 30px; display: grid; place-items: center; background: var(--film); color: var(--edge); font: 600 16px/1 var(--cond); border-radius: var(--r); }
+  .num { position: relative; }
+  .num .tick { position: absolute; right: -9px; top: -7px; width: 22px; height: 18px; fill: none; stroke: var(--grease); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; display: none; }
+  details.step.done .num .tick { display: block; }
+  .step h2 { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.2; }
+  .step .sum { display: block; font-size: 13px; color: var(--ink-3); margin-top: 2px; font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chev { transition: transform .2s cubic-bezier(.2,.7,.2,1); color: var(--ink-3); }
+  details[open] > summary .chev { transform: rotate(180deg); }
+  .body { padding: 2px 20px 22px; display: grid; gap: 14px; }
+  .help { font-size: 13.5px; color: var(--ink-2); margin: 0; }
+  .help b { color: var(--ink); font-weight: 600; }
+
+  /* fields */
+  .field { display: grid; gap: 5px; min-width: 0; }
+  .field > span, .group-label { font-size: 13px; font-weight: 600; color: var(--ink); }
+  .field small, .hint { font-size: 12.5px; color: var(--ink-3); font-weight: 400; }
+  input[type=text], input[type=number], input[type=date], input:not([type]), select, textarea {
+    width: 100%; min-width: 0; background: var(--sheet); border: 1px solid var(--rule-strong); border-radius: var(--r);
+    padding: 8px 10px; font-size: 14.5px; line-height: 1.3; transition: border-color .15s;
+  }
+  textarea { min-height: 84px; resize: vertical; font-family: var(--font); }
+  input:hover, select:hover, textarea:hover { border-color: var(--ink-3); }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+  input::placeholder, textarea::placeholder { color: var(--ink-3); }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .range { display: grid; grid-template-columns: 92px 1fr 1fr; gap: 8px; align-items: center; }
+  .range > span { font-size: 13.5px; color: var(--ink-2); }
+  fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; min-width: 0; }
+  legend { padding: 0; margin-bottom: 6px; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+  .check { display: flex; align-items: center; gap: 9px; font-size: 14px; cursor: pointer; }
+  .check input { width: 17px; height: 17px; accent-color: var(--grease); margin: 0; }
+  .checks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
+
+  /* segmented mode switch */
+  .seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--rule-strong); border-radius: var(--r); overflow: hidden; }
+  .seg label { position: relative; padding: 9px 10px; cursor: pointer; text-align: left; display: grid; gap: 1px; }
+  .seg label + label { border-left: 1px solid var(--rule-strong); }
+  .seg input { position: absolute; opacity: 0; }
+  .seg b { font-size: 14px; font-weight: 600; }
+  .seg small { font-size: 12px; color: var(--ink-3); }
+  .seg label:has(input:checked) { background: var(--film); color: #fff; }
+  .seg label:has(input:checked) small { color: var(--edge); }
+  .seg label:has(input:focus-visible) { outline: 2px solid var(--ink); outline-offset: -4px; }
+
+  /* buttons */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid transparent; border-radius: var(--r); padding: 9px 16px; font-size: 14.5px; font-weight: 600; cursor: pointer; background: var(--grease); color: #fff; transition: background .15s, border-color .15s, color .15s; white-space: nowrap; }
+  a.btn { text-decoration: none; }
+  .btn:hover { background: var(--grease-dark); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn.quiet { background: var(--sheet); color: var(--ink); border-color: var(--rule-strong); }
+  .btn.quiet:hover { border-color: var(--ink); }
+  .btn.small { padding: 6px 10px; font-size: 13.5px; }
+  .btn.small .icon { width: 16px; height: 16px; }
+  .btn.ghost { background: transparent; color: var(--ink-2); padding: 6px 8px; }
+  .btn.ghost:hover { color: var(--grease); background: transparent; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .cost { font-size: 13.5px; color: var(--ink-2); }
+  .cost b { color: var(--ink); }
+  .cost.dear b { color: var(--grease); }
+
+  /* keys */
+  .keys { display: grid; gap: 0; border: 1px solid var(--rule); border-radius: var(--r); }
+  .key { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; padding: 10px 12px; align-items: center; }
+  .key + .key { border-top: 1px solid var(--rule); }
+  .key .name { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .key .name span { font-weight: 400; color: var(--ink-3); font-family: var(--cond); letter-spacing: .04em; }
+  .key .bar { grid-column: 1; height: 4px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+  .key .bar i { display: block; height: 100%; background: var(--film); }
+  .key .state { grid-column: 1; font-size: 12.5px; color: var(--ink-3); }
+  .key .state.bad { color: var(--grease); font-weight: 600; }
+  .key .btn { grid-row: 1 / span 3; grid-column: 2; }
+  details.how { font-size: 13.5px; color: var(--ink-2); }
+  details.how summary { cursor: pointer; font-weight: 600; color: var(--ink); }
+  details.how ol { margin: 8px 0 0; padding-left: 20px; display: grid; gap: 4px; }
+
+  /* presets */
+  .presets { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; }
+  .save-as { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; }
+
+  /* ---------- light table ---------- */
+  .tablebar { display: flex; align-items: flex-end; gap: 16px 20px; flex-wrap: wrap; margin-bottom: 16px; }
+  .tablebar h2 { margin: 0; font-size: 22px; font-weight: 600; line-height: 1.15; }
+  .tablebar p { margin: 3px 0 0; color: var(--ink-2); font-size: 14px; }
+  .tablebar .tools { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .tablebar select { width: auto; padding: 6px 8px; font-size: 13.5px; }
+
+  .sheet { display: grid; grid-template-columns: repeat(auto-fill, minmax(214px, 1fr)); column-gap: 0; row-gap: 22px; background: transparent; }
+  .frame { position: relative; display: flex; flex-direction: column; background: var(--sheet); cursor: pointer; min-width: 0; }
+  .film { position: relative; background: var(--film); padding: 15px 7px 0; }
+  .film::before, .film::after { content: ""; position: absolute; left: 0; right: 0; height: 8px; background: var(--sprocket) repeat-x; }
+  .film::before { top: 4px; }
+  .film::after { bottom: 4px; }
+  .film, .shot, .cap, .cap .ch, .cbar { display: block; }
+  .shot { position: relative; aspect-ratio: 16 / 9; background: var(--film-2); overflow: hidden; }
+  .shot img { width: 100%; height: 100%; object-fit: cover; display: block; transition: opacity .2s, filter .2s; }
+  .shot .len { position: absolute; right: 5px; bottom: 5px; background: rgba(20,20,20,.86); color: #fff; font: 600 12px/1 var(--cond); letter-spacing: .04em; padding: 3px 5px; border-radius: 2px; }
+  .film .edge { display: flex; justify-content: space-between; gap: 8px; padding: 6px 1px 17px; font-size: 12px; }
+  .grease { position: absolute; left: 1px; right: 1px; top: 9px; height: calc(100% - 34px); pointer-events: none; overflow: visible; }
+  .grease path { fill: none; stroke: var(--grease); stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+  /* dash in absolute units: pathLength + non-scaling-stroke leaves a stray arc in Chrome */
+  .grease .ring { stroke-dasharray: 1400; stroke-dashoffset: 0; transition: stroke-dashoffset .26s cubic-bezier(.3,.7,.2,1), opacity .15s; }
+  .grease .cross { opacity: 0; transition: opacity .15s; }
+  .frame.out .grease .ring { stroke-dashoffset: 1400; opacity: 0; }
+  .frame.out .grease .cross { opacity: 1; }
+  .frame.out:hover .grease .ring { stroke-dashoffset: 0; opacity: .35; }
+  .frame.out .shot img { opacity: .42; filter: grayscale(1); }
+  .frame.out .cap { color: var(--ink-3); }
+  .frame:has(input:focus-visible) { outline: 2px solid var(--ink); outline-offset: 3px; z-index: 1; }
+  .cap { padding: 10px 11px 12px; display: grid; gap: 4px; border-right: 1px solid var(--table); }
+  .cap .t { font-size: 14px; font-weight: 500; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.6em; }
+  .cap .t a { text-decoration: none; }
+  .cap .t a:hover { text-decoration: underline; }
+  .cap .ch { font-size: 12.5px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cap .m { display: flex; gap: 10px; font: 500 13px/1.2 var(--cond); letter-spacing: .03em; color: var(--ink-2); }
+  .cbar { height: 3px; background: var(--rule); position: relative; margin-top: 3px; }
+  .cbar i { position: absolute; inset: 0 auto 0 0; background: var(--grease); min-width: 1px; }
+  .frame.out .cbar i { background: var(--ink-3); }
+
+  .more { display: flex; justify-content: center; margin-top: 24px; }
+
+  /* empty / teaching state */
+  .empty { border: 1px dashed var(--rule-strong); background: var(--sheet); padding: 34px 28px; display: grid; gap: 18px; justify-items: start; }
+  .empty h3 { margin: 0; font-size: 20px; font-weight: 600; }
+  .empty p { margin: 0; color: var(--ink-2); max-width: 62ch; }
+  .ghostroll { display: grid; grid-template-columns: repeat(4, minmax(0, 120px)); gap: 0; }
+  .ghostroll i { display: block; aspect-ratio: 16 / 11; background: var(--film); position: relative; }
+  .ghostroll i::after { content: ""; position: absolute; inset: 9px 5px; background: var(--film-2); }
+  .ghostroll.live i::after { animation: develop 1.6s ease-in-out infinite alternate; }
+  .ghostroll.live i:nth-child(2)::after { animation-delay: .2s; } .ghostroll.live i:nth-child(3)::after { animation-delay: .4s; } .ghostroll.live i:nth-child(4)::after { animation-delay: .6s; }
+  @keyframes develop { to { background: #4a4a4a; } }
+
+  /* ---------- jobs ---------- */
+  .jobs { margin-top: 44px; }
+  .jobs h2 { margin: 0 0 4px; font-size: 20px; font-weight: 600; }
+  .jobs > p { margin: 0 0 14px; color: var(--ink-2); font-size: 14px; }
+  table.jobt { width: 100%; border-collapse: collapse; background: var(--sheet); table-layout: fixed; font-size: 14px; }
+  .jobt th { text-align: left; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; padding: 10px 14px; border-bottom: 1px solid var(--rule); }
+  .jobt td { padding: 12px 14px; border-bottom: 1px solid var(--rule); vertical-align: top; overflow-wrap: anywhere; }
+  .jobt tr:last-child td { border-bottom: 0; }
+  .jobt .what { font-weight: 600; }
+  .jobt .sub { font-size: 12.5px; color: var(--ink-3); }
+  .status { display: inline-flex; align-items: center; gap: 6px; font: 600 13px/1 var(--cond); letter-spacing: .08em; text-transform: uppercase; }
+  .status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .s-running { color: var(--grease); } .s-running::before { animation: blink 1s steps(2) infinite; }
+  .s-queued { color: var(--ink-3); } .s-paused { color: var(--warn); } .s-done { color: var(--ink); } .s-error { color: var(--grease); } .s-cancelled { color: var(--ink-3); }
+  @keyframes blink { 50% { opacity: .25; } }
+  .prog { height: 6px; background: var(--rule); margin: 2px 0 6px; }
+  .prog i { display: block; height: 100%; background: var(--film); transform-origin: left; transform: scaleX(var(--p, 0)); transition: transform .3s; }
+  .jobt .note { font-size: 12.5px; color: var(--warn); margin-top: 4px; }
+  .jobt .acts { display: flex; gap: 6px; flex-wrap: wrap; }
+  .jobt tr.is-current td { background: #f6f7f8; }
+  .oncur { display: block; margin-top: 6px; font: 600 12px/1 var(--cond); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+
+  /* ---------- selection strip ---------- */
+  .selbar { position: sticky; bottom: 0; z-index: 5; padding: 18px 20px 14px; }
+  .selbar::after { display: none; }
+  .selbar .in { display: flex; gap: 14px 22px; align-items: center; flex-wrap: wrap; }
+  .tally { display: grid; gap: 3px; min-width: 190px; }
+  .tally b { font: 600 20px/1 var(--cond); letter-spacing: .03em; color: #fff; }
+  .tally span { font-size: 13px; color: #bdbdbd; }
+  .budget { flex: 1 1 240px; display: grid; gap: 6px; min-width: 200px; }
+  .budget .track { height: 8px; background: #3a3a3a; position: relative; }
+  .budget .track i { position: absolute; inset: 0; background: var(--edge); transform-origin: left; transform: scaleX(var(--p, 0)); transition: transform .25s cubic-bezier(.2,.7,.2,1), background .2s; }
+  .budget.over .track i { background: var(--grease); }
+  .budget small { font-size: 12.5px; color: #c9c9c9; }
+  .budget.over small { color: #ffb4b0; }
+  .opts { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 13.5px; color: #dcdcdc; }
+  .opts select, .opts input[type=number] { background: var(--film-2); color: #fff; border-color: #4a4a4a; padding: 6px 8px; font-size: 13.5px; width: auto; }
+  .opts input[type=number] { width: 84px; }
+  .opts input::placeholder { color: #a9a9a9; }
+  .opts label { display: flex; align-items: center; gap: 6px; }
+  .opts .check input { accent-color: var(--edge); }
+  .selbar .btn { padding: 11px 20px; font-size: 15px; }
+  .optbox > summary { display: none; }
+
+  /* toast */
+  #toast { position: fixed; right: 20px; bottom: 112px; z-index: 10; background: var(--film); color: #fff; padding: 11px 16px; border-radius: var(--r); font-size: 14px; max-width: min(440px, calc(100vw - 32px)); opacity: 0; transform: translateY(6px); transition: opacity .2s, transform .2s; pointer-events: none; }
+  #toast.on { opacity: 1; transform: none; }
+  #toast.err { background: var(--grease); }
+
+  @media (max-width: 920px) {
+    .layout { grid-template-columns: 1fr; }
+    aside.steps { position: static; max-height: none; border-right: 0; border-bottom: 1px solid var(--rule); }
+    .desk { padding: 20px 16px 32px; }
+    header.rebate { padding: 20px 16px; }
+    .head { gap: 14px 20px; }
+    .head .next { margin-left: 0; }
+    .sheet { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+    .jobt thead { display: none; }
+    .jobt, .jobt tbody, .jobt tr, .jobt td { display: block; width: 100%; }
+    .jobt tr { border-bottom: 1px solid var(--rule); padding: 6px 0; }
+    .jobt td { border: 0; padding: 6px 14px; }
+    .selbar { padding: 16px 16px 12px; }
+    .selbar .in { display: grid; grid-template-columns: 1fr auto; gap: 10px 12px; }
+    .tally { min-width: 0; }
+    .selbar #scrape { grid-column: 2; grid-row: 1; padding: 10px 14px; }
+    .budget { grid-column: 1 / -1; min-width: 0; }
+    .optbox { grid-column: 1 / -1; }
+    .optbox > summary { display: flex; align-items: center; gap: 6px; list-style: none; cursor: pointer; font-size: 13.5px; color: #dcdcdc; }
+    .optbox > summary::-webkit-details-marker { display: none; }
+    .optbox[open] > summary .chev { transform: rotate(180deg); }
+    .optbox[open] > summary { margin-bottom: 8px; }
+    .ghostroll { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .ghostroll i:nth-child(4) { display: none; }
+  }
+  @media (max-width: 420px) {
+    .checks, .pair { grid-template-columns: 1fr; }
+    .range { grid-template-columns: 1fr 1fr; }
+    .range > span { grid-column: 1 / -1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14.5 8.5l2 2"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-resume" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4"/></symbol>
+  <symbol id="i-open" viewBox="0 0 24 24"><path d="M3 6h6l2 2h10v11H3z"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="i-save" viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5zM8 4v5h7V4M8 20v-6h8v6"/></symbol>
+</svg>
+
+<header class="rebate">
+  <div class="head">
+    <h1 class="brand">YouTube <b>Research</b> Scraper</h1>
+    <div class="roll" role="img" id="roll" aria-label="Today's quota">
+      <div class="frames" id="frames" aria-hidden="true"></div>
+      <p class="edge" id="rollText">No keys yet</p>
+    </div>
+    <p class="next" id="nextStep" aria-live="polite"></p>
+    <a class="guide" href="/guide" target="_blank" rel="noopener">User guide</a>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="steps" aria-label="Setup steps">
+    <details class="step" id="stepKeys" open>
+      <summary><span class="num">1<svg class="tick" viewBox="0 0 22 18"><path d="M3 10l5 5L19 3"/></svg></span><span><h2>API keys</h2><span class="sum" id="sumKeys">Add at least one key to start</span></span><svg class="icon chev"><use href="#i-chev"/></svg></summary>
+      <div class="body">
+        <p class="help">Use a <b>YouTube Data API v3</b> key from Google Cloud (not an AI key). Each key gives <b>10,000 units a day</b>. Keys only add up when each one comes from a <b>different Google Cloud project</b>; keys in the same project share one quota.</p>
+        <div class="keys" id="keyRows"></div>
+        <div class="field"><span>New API key</span><input id="newKey" placeholder="AIza…" autocomplete="off" spellcheck="false"></div>
+        <div class="field"><span>Label <small>optional, e.g. “lab project 2”</small></span><input id="newLabel"></div>
+        <div class="row"><button class="btn" id="addKey"><svg class="icon"><use href="#i-plus"/></svg>Add key</button></div>
+        <details class="how">
+          <summary>How do I get a key?</summary>
+          <ol>
+            <li>Open <a href="https://console.cloud.google.com/projectcreate" target="_blank" rel="noopener">console.cloud.google.com</a> and create a project.</li>
+            <li>Go to “APIs &amp; Services → Library”, find <b>YouTube Data API v3</b>, press Enable.</li>
+            <li>Go to “Credentials → Create credentials → API key” and copy it.</li>
+            <li>Want more quota? Repeat with a new project and add that key too.</li>
+          </ol>
+        </details>
+      </div>
+    </details>
+
+    <details class="step" id="stepFind" open>
+      <summary><span class="num">2</span><span><h2>Find videos</h2><span class="sum" id="sumFind">Where to look, and when</span></span><svg class="icon chev"><use href="#i-chev"/></svg></summary>
+      <div class="body">
+        <div class="seg" role="radiogroup" aria-label="Where to look">
+          <label><input type="radio" name="mode" value="channels" checked><b>From channels</b><small>Cheap: ~1 unit per 25 videos</small></label>
+          <label><input type="radio" name="mode" value="search"><b>Search YouTube</b><small>Costly: 100 units per 50</small></label>
+        </div>
+        <label class="field" id="chBox"><span>Channels <small>one per line: @handle, link or channel ID</small></span>
+          <textarea id="channels" placeholder="@BBCNews&#10;@CNN&#10;https://www.youtube.com/@aljazeeraenglish"></textarea></label>
+        <label class="field" id="qBox" hidden><span>Search words</span><input id="q" placeholder="russia ukraine war"></label>
+        <div class="pair">
+          <label class="field"><span>Published from</span><input type="date" id="after"></label>
+          <label class="field"><span>Published until</span><input type="date" id="before"></label>
+        </div>
+        <div class="pair searchOnly" hidden>
+          <label class="field"><span>Sort search by</span><select id="order"><option value="relevance">Relevance</option><option value="date">Newest</option><option value="viewCount">Most viewed</option></select></label>
+          <label class="field"><span>Results <small>×50</small></span><input type="number" id="maxPages" value="5" min="1" max="10"></label>
+        </div>
+        <div class="pair searchOnly" hidden>
+          <label class="field"><span>Country <small>e.g. US, BD</small></span><input id="regionCode" maxlength="2"></label>
+          <label class="field"><span>Language <small>e.g. en, bn</small></span><input id="relevanceLanguage"></label>
+        </div>
+        <label class="field"><span>Name this collection <small>optional</small></span><input id="jobName" placeholder="Russia–Ukraine news, 2022–24"></label>
+        <div class="row"><button class="btn" id="find"><svg class="icon"><use href="#i-search"/></svg>Find videos</button><span class="cost" id="estimate"></span></div>
+      </div>
+    </details>
+
+    <details class="step" id="stepRules" open>
+      <summary><span class="num">3</span><span><h2>Research rules</h2><span class="sum" id="sumRules">Free to change: no quota used</span></span><svg class="icon chev"><use href="#i-chev"/></svg></summary>
+      <div class="body" id="rules">
+        <p class="help">Rules filter the videos already found, so changing them is <b>instant and free</b>. Leave a box empty to ignore that rule.</p>
+        <fieldset>
+          <legend>Topic</legend>
+          <label class="field"><span>Must mention <small>comma separated; checks title, description and tags</small></span><input data-r="include" placeholder="ukraine, russia, zelensky"></label>
+          <label class="field"><span>How many of those</span><select data-r="includeMode"><option value="any">At least one word</option><option value="all">Every word</option></select></label>
+          <label class="field"><span>Must not mention</span><input data-r="exclude" placeholder="podcast, live stream"></label>
+        </fieldset>
+        <fieldset>
+          <legend>Popularity</legend>
+          <div class="range"><span>Views</span><input type="number" min="0" data-r="minViews" placeholder="min" aria-label="Min views"><input type="number" min="0" data-r="maxViews" placeholder="max" aria-label="Max views"></div>
+          <div class="range"><span>Comments</span><input type="number" min="0" data-r="minComments" placeholder="min" aria-label="Min comments"><input type="number" min="0" data-r="maxComments" placeholder="max" aria-label="Max comments"></div>
+          <div class="range"><span>Likes</span><input type="number" min="0" data-r="minLikes" placeholder="min" aria-label="Min likes"><input type="number" min="0" data-r="maxLikes" placeholder="max" aria-label="Max likes"></div>
+          <label class="field"><span>Discussion level <small>min comments per 1,000 views</small></span><input type="number" min="0" step="0.1" data-r="minEngagement" placeholder="e.g. 2"></label>
+        </fieldset>
+        <fieldset>
+          <legend>Video</legend>
+          <div class="range"><span>Length (min)</span><input type="number" min="0" step="0.5" data-r="minDuration" data-scale="60" placeholder="min" aria-label="Min length in minutes"><input type="number" min="0" step="0.5" data-r="maxDuration" data-scale="60" placeholder="max" aria-label="Max length in minutes"></div>
+          <div class="pair">
+            <label class="field"><span>Language <small>e.g. en, bn</small></span><input data-r="language"></label>
+            <label class="field"><span>Category</span><select data-r="categoryId"><option value="">Any</option><option value="25">News &amp; Politics</option><option value="27">Education</option><option value="28">Science &amp; Tech</option><option value="22">People &amp; Blogs</option><option value="24">Entertainment</option><option value="17">Sports</option><option value="10">Music</option><option value="20">Gaming</option><option value="26">How-to &amp; Style</option></select></label>
+          </div>
+          <div class="checks">
+            <label class="check"><input type="checkbox" data-r="excludeShorts" checked>Skip Shorts</label>
+            <label class="check"><input type="checkbox" data-r="skipCommentsOff" checked>Skip comments off</label>
+            <label class="check"><input type="checkbox" data-r="skipLive">Skip live streams</label>
+            <label class="check"><input type="checkbox" data-r="skipKids" checked>Skip kids’ videos</label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Saved rule sets</legend>
+          <div class="presets">
+            <select id="presets" aria-label="Load a saved rule set"><option value="">Load a rule set…</option></select>
+            <button class="btn quiet small" id="savePreset" type="button"><svg class="icon"><use href="#i-save"/></svg>Save</button>
+            <button class="btn ghost small" id="delPreset" type="button" aria-label="Delete selected rule set"><svg class="icon"><use href="#i-trash"/></svg></button>
+          </div>
+          <div class="save-as" id="saveAs" hidden>
+            <input id="presetName" placeholder="Name, e.g. War news v1" aria-label="Rule set name">
+            <button class="btn small" id="presetOk" type="button">Save</button>
+            <button class="btn ghost small" id="presetCancel" type="button">Cancel</button>
+          </div>
+        </fieldset>
+      </div>
+    </details>
+  </aside>
+
+  <main class="desk">
+    <div class="tablebar">
+      <div>
+        <h2 id="sheetTitle">Contact sheet</h2>
+        <p id="resInfo">Videos you find appear here. Circled frames get scraped.</p>
+      </div>
+      <div class="tools" id="sheetTools" hidden>
+        <label class="sr" for="sortBy">Sort frames</label>
+        <select id="sortBy">
+          <option value="publishedAt:-1">Newest first</option>
+          <option value="publishedAt:1">Oldest first</option>
+          <option value="comments:-1">Most comments</option>
+          <option value="views:-1">Most views</option>
+          <option value="duration:-1">Longest</option>
+        </select>
+        <button class="btn quiet small" id="selAll" type="button">Circle all</button>
+        <button class="btn quiet small" id="selNone" type="button">Clear all</button>
+        <button class="btn quiet small" id="exportVideos" type="button"><svg class="icon"><use href="#i-down"/></svg>videos.csv</button>
+      </div>
+    </div>
+
+    <div id="emptyState"></div>
+    <div class="sheet" id="sheet" role="group" aria-label="Videos: checked frames will be scraped"></div>
+    <div class="more" id="moreBox" hidden><button class="btn quiet" id="more" type="button">Show more frames</button></div>
+
+    <section class="jobs" aria-labelledby="jobsTitle">
+      <h2 id="jobsTitle">Jobs</h2>
+      <p>Saved on this computer. If every key runs out, a job pauses and continues by itself after the reset, or as soon as you add a key.</p>
+      <table class="jobt">
+        <colgroup><col style="width:36%"><col style="width:13%"><col><col style="width:200px"></colgroup>
+        <thead><tr><th>Job</th><th>Status</th><th>Progress</th><th>Actions</th></tr></thead>
+        <tbody id="jobRows"></tbody>
+      </table>
+    </section>
+  </main>
+</div>
+
+<footer class="rebate selbar" aria-label="Scrape selected videos">
+  <div class="in">
+    <div class="tally"><b id="selCount">0 circled</b><span id="selComments">Find videos to start</span></div>
+    <div class="budget" id="budget"><div class="track"><i id="budgetFill"></i></div><small id="budgetText">Cost appears when you circle videos.</small></div>
+    <details class="optbox" id="optbox" open>
+    <summary>Scrape options <svg class="icon chev"><use href="#i-chev"/></svg></summary>
+    <div class="opts">
+      <label>Order <select id="cOrder"><option value="relevance">Top comments</option><option value="time">Newest</option></select></label>
+      <label>Max per video <input type="number" id="maxPer" min="1" placeholder="All"></label>
+      <label class="check"><input type="checkbox" id="allReplies">All replies</label>
+    </div>
+    </details>
+    <button class="btn" id="scrape" disabled><svg class="icon"><use href="#i-play"/></svg>Scrape comments</button>
+  </div>
+</footer>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => [...document.querySelectorAll(s)];
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = (n) => Number(n || 0).toLocaleString('en-US');
+const short = (n) => (n >= 1e6 ? (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(n >= 1e4 ? 0 : 1) + 'K' : String(n || 0));
+const dur = (s) => { const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = String(s % 60).padStart(2, '0'); return h ? `${h}:${String(m).padStart(2, '0')}:${x}` : `${m}:${x}`; };
+const icon = (n) => `<svg class="icon"><use href="#i-${n}"/></svg>`;
+const store = { get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
+function toast(msg, err) { const t = $('#toast'); t.textContent = msg; t.className = 'on' + (err ? ' err' : ''); clearTimeout(toast.t); toast.t = setTimeout(() => (t.className = ''), 4500); }
+async function api(path, method = 'GET', body) {
+  const r = await fetch(path, { method, headers: { 'content-type': 'application/json' }, body: body && JSON.stringify(body) });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error || r.statusText);
+  return j;
+}
+
+let quota = { keys: [] }, jobsList = [], current = store.get('current', null);
+let videos = [], total = 0, rejected = new Set(), shown = 240, firstKeys = true;
+const liveLeft = () => quota.keys.filter((k) => !k.dead).reduce((a, k) => a + k.left, 0);
+const currentJob = () => jobsList.find((j) => j.id === current);
+
+// ---------- quota reset in the viewer's own time ----------
+function resetText() {
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', hour12: false, hour: 'numeric', minute: 'numeric', second: 'numeric' }).formatToParts(new Date()).map((x) => [x.type, +x.value]));
+  const ms = (86400 - ((p.hour % 24) * 3600 + p.minute * 60 + p.second)) * 1000;
+  const at = new Date(Date.now() + ms);
+  const h = Math.floor(ms / 3600e3), m = Math.round((ms % 3600e3) / 60e3);
+  return `${at.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} · in ${h}h ${m}m`;
+}
+
+// ---------- step 1: keys ----------
+async function loadKeys() {
+  quota = await api('/api/quota');
+  const live = quota.keys.filter((k) => !k.dead);
+  $('#keyRows').innerHTML = quota.keys.map((k) => `<div class="key">
+      <div class="name">${esc(k.label || 'Key')} <span>…${esc(k.id)}</span></div>
+      <div class="bar" aria-hidden="true"><i style="width:${(k.left / 100).toFixed(1)}%"></i></div>
+      <div class="state ${k.dead ? 'bad' : ''}">${k.dead ? (k.dead === 'keyInvalid' ? 'Invalid key. Check it was copied fully' : k.dead === 'accessNotConfigured' ? 'YouTube Data API v3 is not enabled for this project' : 'Out of quota until the reset') : `${fmt(k.left)} of 10,000 left today`}</div>
+      <button class="btn ghost small" data-del="${esc(k.id)}" aria-label="Remove key ${esc(k.label)}">${icon('trash')}</button>
+    </div>`).join('');
+  $('#keyRows').hidden = !quota.keys.length;
+  // 20 frames = today's capacity of all keys; lit frames are what's left
+  const cap = quota.keys.length * 10000, lit = cap ? Math.round((liveLeft() / cap) * 20) : 0;
+  $('#frames').innerHTML = Array.from({ length: 20 }, (_, i) => `<i class="${i < lit ? '' : 'used'}"></i>`).join('');
+  $('#rollText').textContent = quota.keys.length ? `${fmt(liveLeft())} units left · ${live.length} key${live.length === 1 ? '' : 's'} · resets ${resetText()}` : 'No keys yet · add one in step 1';
+  $('#roll').setAttribute('aria-label', `Today's quota: ${$('#rollText').textContent}`);
+  $('#sumKeys').textContent = live.length ? `${live.length} active · ${fmt(liveLeft())} units left today` : quota.keys.length ? 'All keys are out of quota or invalid' : 'Add at least one key to start';
+  $('#stepKeys').classList.toggle('done', live.length > 0);
+  if (firstKeys && live.length) $('#stepKeys').open = false;
+  firstKeys = false;
+  updateNext(); updateSel(); syncMode();
+}
+$('#addKey').onclick = async () => {
+  try {
+    await api('/api/keys', 'POST', { key: $('#newKey').value, label: $('#newLabel').value });
+    $('#newKey').value = $('#newLabel').value = '';
+    await loadKeys(); toast('Key added. Paused jobs will continue now.');
+  } catch (e) { toast(e.message, true); }
+};
+$('#newKey').onkeydown = (e) => { if (e.key === 'Enter') $('#addKey').click(); };
+$('#keyRows').onclick = async (e) => { const b = e.target.closest('[data-del]'); if (b) { await api('/api/keys/' + b.dataset.del, 'DELETE'); loadKeys(); } };
+
+// ---------- step 2: find ----------
+const mode = () => $('input[name=mode]:checked').value;
+function syncMode() {
+  const s = mode() === 'search';
+  $('#chBox').hidden = s; $('#qBox').hidden = !s; $$('.searchOnly').forEach((el) => (el.hidden = !s));
+  const pages = Math.min(Math.max(+$('#maxPages').value || 5, 1), 10), cost = pages * 101;
+  $('#estimate').className = 'cost' + (s && cost > liveLeft() ? ' dear' : '');
+  $('#estimate').innerHTML = s ? `Costs up to <b>${fmt(cost)} units</b> for ${fmt(pages * 50)} videos` : 'About <b>1 unit per 25 uploads</b> scanned';
+  const n = $('#channels').value.split(/[\s,]+/).filter(Boolean).length;
+  $('#sumFind').textContent = s ? ($('#q').value ? `Search: “${$('#q').value}”` : 'Search all of YouTube') : n ? `${n} channel${n > 1 ? 's' : ''}${$('#after').value ? ' · from ' + $('#after').value : ''}` : 'Where to look, and when';
+}
+$$('input[name=mode]').forEach((r) => (r.onchange = syncMode));
+['#maxPages', '#channels', '#q', '#after'].forEach((s) => $(s).addEventListener('input', syncMode));
+$('#find').onclick = async () => {
+  const v = (id) => $('#' + id).value;
+  const btn = $('#find'); btn.disabled = true;
+  try {
+    const job = await api('/api/jobs', 'POST', { type: 'discover', mode: mode(), channels: v('channels'), q: v('q'), after: v('after'), before: v('before'), order: v('order'), maxPages: v('maxPages'), regionCode: v('regionCode'), relevanceLanguage: v('relevanceLanguage'), name: v('jobName') });
+    openJob(job.id, false); toast('Finding videos… frames will appear on the sheet as they arrive.');
+    await loadJobs();
+  } catch (e) { toast(e.message, true); }
+  btn.disabled = false;
+};
+
+// ---------- step 3: rules + presets ----------
+function rules() {
+  const r = { after: $('#after').value, before: $('#before').value };
+  $$('[data-r]').forEach((el) => {
+    if (el.type === 'checkbox') r[el.dataset.r] = el.checked;
+    else r[el.dataset.r] = el.dataset.scale && el.value !== '' ? String(+el.value * +el.dataset.scale) : el.value;
+  });
+  return r;
+}
+function setRules(r) {
+  $$('[data-r]').forEach((el) => {
+    const k = el.dataset.r; if (!(k in r)) return;
+    if (el.type === 'checkbox') el.checked = r[k];
+    else el.value = el.dataset.scale && r[k] !== '' ? +r[k] / +el.dataset.scale : r[k];
+  });
+}
+function rulesSummary() {
+  const r = rules(), n = Object.entries(r).filter(([k, v]) => !['after', 'before', 'includeMode', 'skipCommentsOff', 'skipKids', 'excludeShorts'].includes(k) && v !== '' && v !== false).length;
+  $('#sumRules').textContent = n ? `${n} rule${n > 1 ? 's' : ''} active · free to change` : 'Free to change: no quota used';
+}
+let ruleT;
+$('#rules').addEventListener('input', (e) => { if (e.target.closest('.presets, .save-as')) return; clearTimeout(ruleT); ruleT = setTimeout(applyRules, 250); rulesSummary(); });
+['#after', '#before'].forEach((s) => $(s).addEventListener('change', applyRules));
+
+function loadPresets(sel = '') {
+  $('#presets').innerHTML = '<option value="">Load a rule set…</option>' + Object.keys(store.get('presets', {})).map((n) => `<option ${n === sel ? 'selected' : ''}>${esc(n)}</option>`).join('');
+}
+$('#savePreset').onclick = () => { $('#saveAs').hidden = false; $('#presetName').value = $('#presets').value; $('#presetName').focus(); };
+$('#presetCancel').onclick = () => ($('#saveAs').hidden = true);
+$('#presetOk').onclick = () => {
+  const n = $('#presetName').value.trim(); if (!n) return $('#presetName').focus();
+  const p = store.get('presets', {}); p[n] = rules(); store.set('presets', p);
+  loadPresets(n); $('#saveAs').hidden = true; toast(`Rule set “${n}” saved in this browser.`);
+};
+$('#presetName').onkeydown = (e) => { if (e.key === 'Enter') $('#presetOk').click(); if (e.key === 'Escape') $('#presetCancel').click(); };
+$('#delPreset').onclick = () => { const n = $('#presets').value; if (!n) return toast('Pick a rule set to delete first.'); const p = store.get('presets', {}); delete p[n]; store.set('presets', p); loadPresets(); toast(`Rule set “${n}” deleted.`); };
+$('#presets').onchange = () => { const r = store.get('presets', {})[$('#presets').value]; if (r) { setRules(r); rulesSummary(); applyRules(); } };
+
+// ---------- the light table ----------
+function openJob(id, scroll = true) {
+  current = id; store.set('current', id); rejected = new Set(); shown = 240; videos = []; total = 0;
+  applyRules();
+  if (scroll && innerWidth < 920) $('.desk').scrollIntoView({ behavior: 'smooth' });
+}
+async function applyRules() {
+  rulesSummary();
+  if (!current) return renderSheet();
+  try {
+    const r = await api(`/api/jobs/${current}/filter`, 'POST', rules());
+    videos = r.videos; total = r.total;
+  } catch (e) { videos = []; total = 0; if (!/No such job/.test(e.message)) toast(e.message, true); else { current = null; store.set('current', null); } }
+  renderSheet();
+}
+function sorted() {
+  const [k, d] = $('#sortBy').value.split(':');
+  return [...videos].sort((a, b) => (a[k] > b[k] ? 1 : a[k] < b[k] ? -1 : 0) * +d);
+}
+const RING = 'M100 6 C158 4 196 26 194 60 C192 98 142 116 96 114 C44 112 6 94 7 58 C8 24 50 6 116 11';
+function frameHTML(v, i, maxC) {
+  const out = rejected.has(v.id);
+  return `<label class="frame${out ? ' out' : ''}" data-id="${esc(v.id)}">
+    <input type="checkbox" class="sr" ${out ? '' : 'checked'} aria-label="${esc(v.title)}">
+    <span class="film">
+      <span class="shot"><img loading="lazy" src="https://i.ytimg.com/vi/${esc(v.id)}/mqdefault.jpg" alt=""><span class="len">${dur(v.duration)}</span></span>
+      <span class="edge"><span>${Math.floor(i / 2) + 1}${i % 2 ? 'A' : ''}</span><span>${esc(v.publishedAt.slice(0, 10))}</span></span>
+      <svg class="grease" viewBox="0 0 200 120" preserveAspectRatio="none" aria-hidden="true"><path class="ring" d="${RING}"/><path class="cross" d="M24 16 L178 104 M180 14 L22 106"/></svg>
+    </span>
+    <span class="cap">
+      <span class="t"><a href="https://www.youtube.com/watch?v=${esc(v.id)}" target="_blank" rel="noopener" title="${esc(v.title)}">${esc(v.title)}</a></span>
+      <span class="ch">${esc(v.channel)}</span>
+      <span class="m"><span>${short(v.views)} views</span><span>${fmt(v.comments)} comments</span></span>
+      <span class="cbar" aria-hidden="true"><i style="width:${maxC ? ((v.comments / maxC) * 100).toFixed(1) : 0}%"></i></span>
+    </span>
+  </label>`;
+}
+function renderSheet() {
+  const job = currentJob(), running = job && ['queued', 'running'].includes(job.status);
+  const list = sorted(), maxC = Math.max(0, ...videos.map((v) => v.comments));
+  $('#sheet').innerHTML = list.slice(0, shown).map((v, i) => frameHTML(v, i, maxC)).join('');
+  $('#moreBox').hidden = list.length <= shown;
+  $('#more').textContent = `Show ${fmt(Math.min(240, list.length - shown))} more of ${fmt(list.length - shown)} hidden frames`;
+  $('#sheetTools').hidden = !videos.length;
+  $('#sheetTitle').textContent = job && job.name ? job.name : 'Contact sheet';
+
+  const info = $('#resInfo');
+  if (!current) info.textContent = 'Videos you find appear here. Circled frames get scraped.';
+  else if (running) info.textContent = `Still finding videos: ${fmt(job.progress.scanned)} checked so far. ${fmt(videos.length)} match your rules.`;
+  else info.innerHTML = `<b>${fmt(videos.length)}</b> of ${fmt(total)} videos found match your rules. Click a frame to cross it out.`;
+
+  let empty = '';
+  if (!quota.keys.some((k) => !k.dead) && !current) {
+    empty = `<div class="empty"><div class="ghostroll" aria-hidden="true"><i></i><i></i><i></i><i></i></div><h3>Start with an API key</h3><p>The scraper uses YouTube’s official API. Add a free key in step 1. It takes about two minutes, and the steps are listed under “How do I get a key?”.</p><button class="btn" type="button" data-goto="stepKeys">${icon('key')}Add a key</button></div>`;
+  } else if (!current) {
+    empty = `<div class="empty"><div class="ghostroll" aria-hidden="true"><i></i><i></i><i></i><i></i></div><h3>Your contact sheet is empty</h3><p>List the channels you study in step 2 (for example <b>@BBCNews</b>, <b>@CNN</b>), set the date range and press <b>Find videos</b>. Every video found lands here as a frame; your rules in step 3 decide which stay.</p><button class="btn" type="button" data-goto="stepFind">${icon('search')}Go to step 2</button></div>`;
+  } else if (running && !videos.length) {
+    empty = `<div class="empty"><div class="ghostroll live" aria-hidden="true"><i></i><i></i><i></i><i></i></div><h3>Developing…</h3><p>${fmt(job.progress.scanned)} uploads checked, ${fmt(job.progress.candidates)} videos fetched so far. Frames appear here as soon as they match your rules.</p></div>`;
+  } else if (job && job.status === 'paused' && !videos.length) {
+    empty = `<div class="empty"><h3>Paused: out of quota</h3><p>Every key has used today’s quota. This search continues by itself at ${esc(resetText())}, or right away if you add a key from another Google Cloud project.</p><button class="btn" type="button" data-goto="stepKeys">${icon('key')}Add a key</button></div>`;
+  } else if (!videos.length && total) {
+    empty = `<div class="empty"><h3>No videos match your rules</h3><p>${fmt(total)} videos were found, but your rules in step 3 remove all of them. Loosen a rule; it costs nothing to try again.</p><button class="btn quiet" type="button" data-goto="stepRules">Edit rules</button></div>`;
+  } else if (!videos.length && job && job.status === 'done') {
+    empty = `<div class="empty"><h3>No videos found</h3><p>Check the channel names and the date range in step 2. Open “Jobs” below to see if a channel could not be found.</p><button class="btn quiet" type="button" data-goto="stepFind">Check step 2</button></div>`;
+  }
+  $('#emptyState').innerHTML = empty;
+  updateSel(); updateNext();
+}
+$('#emptyState').onclick = (e) => { const b = e.target.closest('[data-goto]'); if (!b) return; const d = $('#' + b.dataset.goto); d.open = true; d.scrollIntoView({ behavior: 'smooth', block: 'start' }); d.querySelector('input, textarea')?.focus({ preventScroll: true }); };
+$('#sheet').addEventListener('change', (e) => {
+  const f = e.target.closest('.frame'); if (!f) return;
+  e.target.checked ? rejected.delete(f.dataset.id) : rejected.add(f.dataset.id);
+  f.classList.toggle('out', !e.target.checked); updateSel();
+});
+$('#sortBy').onchange = renderSheet;
+$('#more').onclick = () => { shown += 240; renderSheet(); };
+$('#selAll').onclick = () => { rejected = new Set(); renderSheet(); };
+$('#selNone').onclick = () => { rejected = new Set(videos.map((v) => v.id)); renderSheet(); };
+$('#exportVideos').onclick = () => { if (current) location.href = `/api/jobs/${current}/videos.csv?rules=${encodeURIComponent(JSON.stringify(rules()))}`; };
+
+// ---------- selection strip ----------
+function updateSel() {
+  const sel = videos.filter((v) => !rejected.has(v.id)), max = +$('#maxPer').value || 0;
+  const comments = sel.reduce((a, v) => a + (max ? Math.min(max, v.comments) : v.comments), 0);
+  const units = sel.length ? Math.ceil(comments / 80) + sel.length : 0, left = liveLeft();
+  $('#selCount').textContent = `${fmt(sel.length)} circled`;
+  $('#selComments').textContent = sel.length ? `about ${fmt(comments)} comments` : videos.length ? 'Click frames to circle them' : 'Find videos to start';
+  const over = units > left;
+  $('#budget').classList.toggle('over', over && units > 0);
+  $('#budgetFill').style.setProperty('--p', left ? Math.min(1, units / left) : units ? 1 : 0);
+  $('#budgetText').textContent = !units ? 'Cost appears when you circle videos.'
+    : over ? `Needs ~${fmt(units)} units, ${fmt(left)} left today. It will pause and finish after the reset.`
+    : `Uses ~${fmt(units)} of ${fmt(left)} units left today${$('#allReplies').checked ? ', more with all replies' : ''}.`;
+  $('#scrape').disabled = !sel.length;
+}
+$('#maxPer').oninput = updateSel; $('#allReplies').onchange = updateSel;
+$('#scrape').onclick = async () => {
+  const sel = videos.filter((v) => !rejected.has(v.id)).map(({ id, title, channel }) => ({ id, title, channel }));
+  try {
+    await api('/api/jobs', 'POST', { type: 'scrape', videos: sel, order: $('#cOrder').value, maxPerVideo: $('#maxPer').value, allReplies: $('#allReplies').checked, name: currentJob()?.name ? currentJob().name + ' · comments' : '' });
+    toast(`Scraping comments from ${fmt(sel.length)} videos. Track it under Jobs; you can download the CSV while it runs.`);
+    await loadJobs(); $('.jobs').scrollIntoView({ behavior: 'smooth' });
+  } catch (e) { toast(e.message, true); }
+};
+
+// ---------- next-step guidance ----------
+function updateNext() {
+  const live = quota.keys.some((k) => !k.dead), job = currentJob();
+  const scraping = jobsList.find((j) => j.type === 'scrape' && ['running', 'queued', 'paused'].includes(j.status));
+  let t;
+  if (!quota.keys.length) t = '<b>Next:</b> add an API key in step 1.';
+  else if (!live) t = `<b>All keys are out of quota.</b> Jobs continue at ${esc(resetText())}, or add a key from another project.`;
+  else if (scraping) t = `<b>Scraping:</b> ${fmt(scraping.progress.comments)} comments saved so far. See Jobs.`;
+  else if (!current) t = '<b>Next:</b> choose channels in step 2 and press Find videos.';
+  else if (job && ['running', 'queued'].includes(job.status)) t = '<b>Finding videos…</b> you can adjust rules while you wait.';
+  else if (videos.length) t = '<b>Next:</b> cross out what you don’t want, then press Scrape comments.';
+  else t = '<b>Next:</b> loosen your rules or try other channels.';
+  $('#nextStep').innerHTML = t;
+}
+
+// ---------- jobs ----------
+let lastStatus = {};
+function jobWhat(j) { return j.type === 'discover' ? (j.mode === 'search' ? `Search “${j.q}”` : `Find videos: ${j.channels.join(', ')}`) : `Comments from ${fmt(j.videoCount)} videos`; }
+function jobRow(j) {
+  const p = j.progress, isScrape = j.type === 'scrape';
+  const pct = isScrape ? (p.total ? ((j.status === 'done' ? p.total : Math.max(0, p.video - 1)) / p.total) * 100 : 0) : j.status === 'done' ? 100 : 0;
+  const notes = [...(j.log || []), ...(p.skipped || []).slice(-3).map((s) => 'Skipped ' + s.replace('commentsDisabled', 'comments are off'))];
+  const when = new Date(j.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  const acts = [
+    !isScrape && j.status !== 'queued' ? `<button class="btn quiet small" data-open="${j.id}">${icon('open')}Open</button>` : '',
+    isScrape && p.comments ? `<a class="btn quiet small" href="/api/jobs/${j.id}/comments.csv">${icon('down')}comments.csv</a>` : '',
+    ['paused', 'error', 'cancelled'].includes(j.status) ? `<button class="btn quiet small" data-resume="${j.id}">${icon('resume')}Resume</button>` : '',
+    ['queued', 'running', 'paused'].includes(j.status) ? `<button class="btn ghost small" data-cancel="${j.id}">${icon('x')}Cancel</button>` : '',
+  ].join('');
+  const status = { queued: 'Waiting', running: 'Running', paused: 'Paused', done: 'Done', error: 'Error', cancelled: 'Cancelled' }[j.status] || j.status;
+  return `<tr class="${j.id === current ? 'is-current' : ''}">
+    <td><div class="what">${esc(j.name || jobWhat(j))}</div><div class="sub">${j.name ? esc(jobWhat(j)) + ' · ' : ''}${esc(when)}</div></td>
+    <td><span class="status s-${j.status}">${status}</span>${j.id === current && !isScrape ? '<span class="oncur">On the sheet</span>' : ''}</td>
+    <td>${isScrape ? `<div class="prog" aria-hidden="true"><i style="--p:${(pct / 100).toFixed(3)}"></i></div>Video ${fmt(Math.min(p.video, p.total))} of ${fmt(p.total)} · <b>${fmt(p.comments)}</b> comments` : `${fmt(p.scanned)} checked · <b>${fmt(p.candidates)}</b> videos found`}
+      ${j.status === 'paused' ? `<div class="note">Out of quota. Continues at ${esc(resetText())} or when you add a key.</div>` : j.error ? `<div class="note">${esc(j.error)}</div>` : ''}
+      ${notes.length ? `<div class="sub">${notes.map(esc).join('<br>')}</div>` : ''}</td>
+    <td><div class="acts">${acts}</div></td></tr>`;
+}
+async function loadJobs() {
+  jobsList = await api('/api/jobs');
+  $('#jobRows').innerHTML = jobsList.map(jobRow).join('') || '<tr><td colspan="4" class="sub">No jobs yet. Your searches and scrapes will be listed here.</td></tr>';
+  const job = currentJob();
+  if (job && (['running', 'queued'].includes(job.status) || (lastStatus[job.id] && lastStatus[job.id] !== job.status))) applyRules();
+  jobsList.forEach((j) => (lastStatus[j.id] = j.status));
+  updateNext();
+}
+$('#jobRows').onclick = async (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.open) { openJob(b.dataset.open); if (innerWidth >= 920) scrollTo({ top: 0, behavior: 'smooth' }); }
+  if (b.dataset.cancel) await api(`/api/jobs/${b.dataset.cancel}/cancel`, 'POST', {});
+  if (b.dataset.resume) await api(`/api/jobs/${b.dataset.resume}/resume`, 'POST', {});
+  loadJobs();
+};
+
+// ---------- start ----------
+if (innerWidth < 920) $('#optbox').open = false; // phones: keep the sticky strip short
+loadPresets(); syncMode(); rulesSummary();
+Promise.all([loadKeys(), loadJobs()]).then(applyRules).catch((e) => toast(e.message, true));
+setInterval(() => { loadJobs().catch(() => {}); loadKeys().catch(() => {}); }, 3000);
+</script>
+</body>
+</html>
