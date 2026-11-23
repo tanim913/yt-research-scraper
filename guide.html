@@ -308,6 +308,7 @@
         <div class="chhead"><span class="n">3</span><h2>Find videos</h2><a class="toq" href="#questions"><svg class="icon"><use href="#i-up"/></svg>Questions</a></div>
         <div class="prose">
           <p class="lede">Step 2 in the app decides where the scraper looks. Pick one of two ways.</p>
+          <div class="note"><svg class="icon"><use href="#i-info"/></svg><span><b>Several keywords and countries at once.</b> In <em>Search YouTube</em> mode, write one search per line and list countries like <code>BD, IN, US</code>. Each keyword is searched once per country, all into one pool, and each video remembers which country and keyword found it. Every search costs about 100 units a page, so the cost line shows the total before you start. A country here is a hint to YouTube, not a guarantee: YouTube does not say which country a video is from.</span></div>
           <figure>
             <div class="fig-seg" aria-hidden="true"><span class="on"><b>From channels</b><small>Cheap: ~1 unit per 25 videos</small></span><span><b>Search YouTube</b><small>Costly: 100 units per 50</small></span></div>
             <figcaption>The switch at the top of step 2. The dark half is the one selected.</figcaption>
@@ -353,6 +354,7 @@ https://www.youtube.com/channel/UC16niRr50-MSBwiO3YDb3RA</code></div>
         <div class="chhead"><span class="n">5</span><h2>Review and scrape</h2><a class="toq" href="#questions"><svg class="icon"><use href="#i-up"/></svg>Questions</a></div>
         <div class="prose">
           <p class="lede">Every video that passes your rules appears as a frame, circled in red. Circled frames get scraped.</p>
+          <div class="note"><svg class="icon"><use href="#i-info"/></svg><span><b>Keep the top N per group.</b> Above the sheet, choose how many videos you want per <em>year + country</em>, <em>year</em>, <em>country</em> or <em>channel</em>, ranked by comments, views or likes, and press <strong>Apply</strong>. The rest are crossed out, and a line under the bar tells you which groups fell short of the target (for example “2026 · BD: only 4 of 9”). That is your cue to add keywords or widen the dates, then apply again. All of this is free.</span></div>
         </div>
         <figure>
           <div class="fig-frames" aria-hidden="true">
@@ -416,6 +418,7 @@ https://www.youtube.com/channel/UC16niRr50-MSBwiO3YDb3RA</code></div>
         <div class="chhead"><span class="n">7</span><h2>The CSV files</h2><a class="toq" href="#questions"><svg class="icon"><use href="#i-up"/></svg>Questions</a></div>
         <div class="prose">
           <p class="lede">Both files open in Excel, Google Sheets, or Python. Bangla, Russian and other scripts display correctly.</p>
+          <div class="note"><svg class="icon"><use href="#i-info"/></svg><span><b>Clean comments.</b> After a scrape, use <strong>Clean comments</strong> under Jobs. It removes empty or emoji-only comments, link-only comments, “like if…” and “subscribe” bait, duplicates on the same video, and comments with words you list (for example party names under a video about RAM prices). It labels each comment’s script (English letters, Bengali, Arabic…) and can translate the non-English ones to English with the AI helper. You get <code>comments-clean.csv</code> (with <code>script</code> and <code>text_en</code> columns) and <code>comments-removed.csv</code> with the reason for every removed comment, so you can report the cleaning in your methods. Your original <code>comments.csv</code> is never changed. A script is not a language: Bangla typed in English letters counts as English letters.</span></div>
           <h3>comments.csv</h3>
           <p>One row per comment or reply. Download it from <strong>Jobs</strong>.</p>
           <div class="scrollx"><table class="tbl">

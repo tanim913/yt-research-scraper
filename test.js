@@ -160,7 +160,7 @@ test('ai helper: suggests keywords and flags off-topic titles; the key is never 
   const st = ai.configure({ provider: 'gemini', key: 'TEST-AI-KEY-1234567890' });
   assert.deepEqual(st, { provider: 'gemini', model: 'gemini-2.5-flash', configured: true, last4: '7890' });
   ai.setFetch(gemini('```json\n{"include":["Ukraine","ukraine","Kyiv"],"exclude":["gameplay"],"note":"ok"}\n```'));
-  assert.deepEqual(await ai.suggest('war news'), { include: ['ukraine', 'kyiv'], exclude: ['gameplay'], note: 'ok' });
+  assert.deepEqual(await ai.suggest('war news'), { include: ['ukraine', 'kyiv'], exclude: ['gameplay'], search: [], note: 'ok' });
   ai.setFetch(gemini('{"off":[2,9,"x"]}'));
   const vids = [{ id: 'a', title: 'War update', channel: 'C' }, { id: 'b', title: 'Cat video', channel: 'D' }];
   assert.deepEqual((await ai.judge('war news', vids)).off, ['b']); // 9 and "x" are out of range, dropped
@@ -168,4 +168,52 @@ test('ai helper: suggests keywords and flags off-topic titles; the key is never 
   assert.ok(!sent[0].url.includes('TEST-AI-KEY')); // key travels in a header, not the URL
   ai.setFetch(async () => ({ ok: false, status: 429, json: async () => ({}) }));
   await assert.rejects(ai.suggest('war news'), /free limit/);
+});
+
+test('discover job (search): every keyword x country is searched, and each video remembers where it was found', async () => {
+  reset(); yt.addKey(K1);
+  const searches = [];
+  yt.setFetch(async (url) => {
+    const u = new URL(url), p = u.searchParams, ep = u.pathname.split('/').pop();
+    if (ep === 'search') {
+      searches.push(p.get('q') + '@' + p.get('regionCode'));
+      // 'shared_____' turns up in every search; the other id is unique to its search
+      return reply(200, { items: [{ id: { videoId: 'shared_____' } }, { id: { videoId: 'only' + searches.length + '______' } }] });
+    }
+    if (ep === 'videos') return reply(200, { items: p.get('id').split(',').map((id) => ({ id, snippet: { title: id, publishedAt: '2024-01-01T00:00:00Z' }, statistics: { viewCount: '5', commentCount: '9' }, contentDetails: { duration: 'PT5M' } })) });
+    throw new Error('unexpected ' + url);
+  });
+  assert.throws(() => jobs.createJob({ type: 'discover', mode: 'search', q: Array.from({ length: 10 }, (_, i) => 'k' + i).join('\n'), regionCode: 'BD IN US CN GB FR' }), /too many searches/);
+  const job = jobs.createJob({ type: 'discover', mode: 'search', q: 'ram price\nram shortage\nram price', regionCode: 'bd, in', maxPages: 1 });
+  await jobs.kick();
+  assert.strictEqual(jobs.getJob(job.id).status, 'done');
+  assert.deepStrictEqual(searches, ['ram price@BD', 'ram shortage@BD', 'ram price@IN', 'ram shortage@IN']); // duplicate keyword ignored
+  const vs = jobs.videosOf(job.id), shared = vs.find((v) => v.id === 'shared_____');
+  assert.strictEqual(vs.length, 5);
+  assert.deepStrictEqual(shared.regions.sort(), ['BD', 'IN']);
+  assert.deepStrictEqual(shared.queries.sort(), ['ram price', 'ram shortage']);
+  assert.match(jobs.videosCsv(vs), /BD\|IN,ram price\|ram shortage/);
+});
+
+test('comment cleaning: labels scripts, drops junk with a reason, keeps a report, merges translations', async () => {
+  const clean = require('./clean'), ai = require('./ai');
+  const id = 'clean-test';
+  fs.mkdirSync(path.dirname(jobs.commentsFile(id)), { recursive: true });
+  const H = ['video_id', 'video_title', 'channel', 'comment_id', 'parent_id', 'is_reply', 'author', 'text', 'like_count', 'published_at', 'reply_count'];
+  const row = (cid, text) => jobs.csvRow(['v1', 'RAM prices, "up"', 'C', cid, '', 0, '@a', text, 1, '2024-01-01T00:00:00Z', 0]);
+  const texts = ['RAM prices are crazy right now', 'ram prices are  crazy right now', '😂😂', 'like if you love namaz', 'নামাজ ভালোবাসলে লাইক চাপুন', 'bnp or awami league?', 'দাম অনেক বেশি\nআগের চেয়ে', 'https://spam.example/x', 'ok'];
+  fs.writeFileSync(jobs.commentsFile(id), '﻿' + jobs.csvRow(H) + texts.map((t, i) => row('c' + i, t)).join(''));
+  const rep = clean.run(id, { dropWords: 'bnp, awami' });
+  assert.deepStrictEqual(rep.byReason, { duplicate: 1, 'too short or no words': 2, 'engagement bait': 2, 'your junk words': 1, link: 1 });
+  assert.strictEqual(rep.kept, 2);
+  assert.deepStrictEqual(rep.keptByScript, { latin: 1, bengali: 1 });
+  assert.match(fs.readFileSync(path.join(path.dirname(jobs.commentsFile(id)), 'comments-removed.csv'), 'utf8'), /duplicate/);
+  // translation: only non-Latin kept comments are sent, and the answer is merged into text_en
+  assert.deepStrictEqual(clean.nextToTranslate(id).todo.map((t) => t.id), ['c6']);
+  ai.configure({ provider: 'gemini', key: 'TEST-AI-KEY-1234567890' });
+  ai.setFetch(async () => ({ ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [{ text: '{"t":["The price is much higher than before"]}' }] } }] }) }));
+  clean.saveTranslations(id, await ai.translate(clean.nextToTranslate(id).todo));
+  assert.strictEqual(clean.nextToTranslate(id).remaining, 0);
+  const out = clean.parseCsv(clean.cleanCsvWithEnglish(id));
+  assert.deepStrictEqual(out.map((r) => r[r.length - 1]), ['text_en', 'RAM prices are crazy right now', 'The price is much higher than before']);
 });

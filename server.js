@@ -5,6 +5,7 @@ const path = require('path');
 const yt = require('./yt');
 const jobs = require('./jobs');
 const ai = require('./ai');
+const clean = require('./clean');
 const { applyFilters } = require('./filters');
 
 const PORT = +process.env.PORT || 3000;
@@ -51,7 +52,7 @@ async function handle(req, res) {
   if (kind === 'ai') {
     if (!id && m === 'GET') return send(res, 200, ai.status());
     if (!id && m === 'POST') return send(res, 200, ai.configure(await readBody(req)));
-    if (id === 'suggest' && m === 'POST') return send(res, 200, await ai.suggest((await readBody(req)).topic));
+    if (id === 'suggest' && m === 'POST') return send(res, 200, await ai.suggest(...(({ topic, seed }) => [topic, seed])(await readBody(req))));
     if (id === 'judge' && m === 'POST') { const b = await readBody(req); return send(res, 200, await ai.judge(b.topic, b.videos)); }
   }
 
@@ -78,6 +79,25 @@ async function handle(req, res) {
       const file = jobs.commentsFile(id);
       if (!fs.existsSync(file)) return send(res, 404, { error: 'No comments yet.' });
       download(res, `comments-${id}.csv`, 'text/csv; charset=utf-8');
+      return fs.createReadStream(file).pipe(res);
+    }
+    if (action === 'clean' && m === 'GET') return send(res, 200, clean.report(id));
+    if (action === 'clean' && m === 'POST') return send(res, 200, clean.run(id, await readBody(req)));
+    if (action === 'translate' && m === 'POST') {
+      const { todo } = clean.nextToTranslate(id);
+      if (todo.length) clean.saveTranslations(id, await ai.translate(todo));
+      return send(res, 200, clean.nextToTranslate(id, 0));
+    }
+    if (action === 'comments-clean.csv' && m === 'GET') {
+      const csv = clean.cleanCsvWithEnglish(id);
+      if (!csv) return send(res, 404, { error: 'Clean the comments first.' });
+      download(res, `comments-clean-${id}.csv`, 'text/csv; charset=utf-8');
+      return res.end(csv);
+    }
+    if (action === 'comments-removed.csv' && m === 'GET') {
+      const file = require('path').join(require('path').dirname(jobs.commentsFile(id)), 'comments-removed.csv');
+      if (!fs.existsSync(file)) return send(res, 404, { error: 'Clean the comments first.' });
+      download(res, `comments-removed-${id}.csv`, 'text/csv; charset=utf-8');
       return fs.createReadStream(file).pipe(res);
     }
     if (action === 'cancel' && m === 'POST') { jobs.cancelJob(id); return send(res, 200, { ok: true }); }

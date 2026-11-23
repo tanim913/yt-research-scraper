@@ -22,9 +22,9 @@ function listJobs() {
 const esc = (x) => { const s = x == null ? '' : String(x); return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
 const csvRow = (a) => a.map(esc).join(',') + '\r\n';
 const BOM = '﻿'; // lets Excel open UTF-8 (Bengali, Russian, ...) correctly
-const VIDEO_COLS = ['video_id', 'url', 'title', 'channel', 'published_at', 'views', 'likes', 'comments', 'duration_s', 'language', 'tags'];
+const VIDEO_COLS = ['video_id', 'url', 'title', 'channel', 'published_at', 'views', 'likes', 'comments', 'duration_s', 'language', 'tags', 'search_regions', 'search_queries'];
 const COMMENT_COLS = ['video_id', 'video_title', 'channel', 'comment_id', 'parent_id', 'is_reply', 'author', 'text', 'like_count', 'published_at', 'reply_count'];
-const videosCsv = (vs) => BOM + csvRow(VIDEO_COLS) + vs.map((v) => csvRow([v.id, 'https://www.youtube.com/watch?v=' + v.id, v.title, v.channel, v.publishedAt, v.views, v.likes, v.comments, v.duration, v.language, v.tags.join('|')])).join('');
+const videosCsv = (vs) => BOM + csvRow(VIDEO_COLS) + vs.map((v) => csvRow([v.id, 'https://www.youtube.com/watch?v=' + v.id, v.title, v.channel, v.publishedAt, v.views, v.likes, v.comments, v.duration, v.language, v.tags.join('|'), (v.regions || []).join('|'), (v.queries || []).join('|')])).join('');
 const commentsFile = (id) => path.join(OUT, id, 'comments.csv');
 
 // Candidate videos of a discover job, deduplicated (a crash can re-append the last page).
@@ -33,7 +33,11 @@ function videosOf(id) {
   try { txt = fs.readFileSync(path.join(JOBS, id + '.videos.ndjson'), 'utf8'); } catch {}
   const byId = new Map();
   for (const line of txt.split('\n')) {
-    try { const v = JSON.parse(line); byId.set(v.id, v); } catch {} // skips blank or half-written lines
+    try {
+      const v = JSON.parse(line), old = byId.get(v.id);
+      if (old) { v.regions = [...new Set([...(old.regions || []), ...(v.regions || [])])]; v.queries = [...new Set([...(old.queries || []), ...(v.queries || [])])]; }
+      byId.set(v.id, v);
+    } catch {} // skips blank or half-written lines
   }
   return [...byId.values()];
 }
@@ -47,13 +51,16 @@ function createJob(spec) {
   if (spec.type === 'discover') {
     const mode = spec.mode === 'search' ? 'search' : 'channels';
     const channels = String(spec.channels || '').split(/[\s,]+/).filter(Boolean);
-    const q = String(spec.q || '').trim();
+    const queries = [...new Set(String(spec.q || '').split('\n').map((x) => x.trim()).filter(Boolean))].slice(0, 10);
+    const regions = [...new Set(String(spec.regionCode || '').split(/[\s,]+/).map((x) => x.slice(0, 2).toUpperCase()).filter((x) => /^[A-Z]{2}$/.test(x)))].slice(0, 6);
+    const q = queries.join(' | ');
     if (mode === 'channels' && !channels.length) throw new Error('Add at least one channel.');
-    if (mode === 'search' && !q) throw new Error('Enter a search query.');
+    if (mode === 'search' && !queries.length) throw new Error('Enter a search query.');
+    if (mode === 'search' && queries.length * Math.max(regions.length, 1) > 40) throw new Error('That is too many searches (keywords x countries). Keep it to 40 or fewer.');
     job = {
       ...base, type: 'discover',
-      params: { mode, channels, q, after: date(spec.after), before: date(spec.before), order: ['date', 'viewCount', 'relevance'].includes(spec.order) ? spec.order : 'relevance', regionCode: String(spec.regionCode || '').slice(0, 2).toUpperCase(), relevanceLanguage: String(spec.relevanceLanguage || '').slice(0, 5), maxPages: Math.min(Math.max(parseInt(spec.maxPages, 10) || 5, 1), 10) },
-      cursor: { ci: 0, uploads: null, pageToken: null, page: 0 },
+      params: { mode, channels, q, after: date(spec.after), before: date(spec.before), order: ['date', 'viewCount', 'relevance'].includes(spec.order) ? spec.order : 'relevance', queries, regions, relevanceLanguage: String(spec.relevanceLanguage || '').slice(0, 5), maxPages: Math.min(Math.max(parseInt(spec.maxPages, 10) || 5, 1), 10) },
+      cursor: { ci: 0, uploads: null, pageToken: null, page: 0, si: 0 },
       progress: { scanned: 0, candidates: 0 },
     };
   } else if (spec.type === 'scrape') {
@@ -128,11 +135,11 @@ function channelQuery(s) {
 async function discover(job) {
   const p = job.params, c = job.cursor;
   const file = path.join(JOBS, job.id + '.videos.ndjson');
-  const addVideos = async (ids) => {
+  const addVideos = async (ids, tag = {}) => {
     if (!ids.length) return;
     const r = await yt.call('videos', { part: 'snippet,statistics,contentDetails,status,liveStreamingDetails', id: ids.join(','), maxResults: 50 });
     const items = r.items || [];
-    if (items.length) fs.appendFileSync(file, items.map((i) => JSON.stringify(flatten(i))).join('\n') + '\n');
+    if (items.length) fs.appendFileSync(file, items.map((i) => JSON.stringify({ ...flatten(i), regions: tag.region ? [tag.region] : [], queries: tag.query ? [tag.query] : [] })).join('\n') + '\n');
     job.progress.candidates += items.length;
   };
 
@@ -175,20 +182,29 @@ async function discover(job) {
       saveJob(job);
     }
   } else {
-    while (c.page < p.maxPages) {
-      checkCancel(job);
-      const r = await yt.call('search', {
-        part: 'id', type: 'video', q: p.q, maxResults: 50, order: p.order, pageToken: c.pageToken,
-        publishedAfter: p.after && p.after + 'T00:00:00Z', publishedBefore: p.before && p.before + 'T23:59:59Z',
-        regionCode: p.regionCode, relevanceLanguage: p.relevanceLanguage,
-      }, 100);
-      const ids = (r.items || []).map((i) => i.id && i.id.videoId).filter(Boolean);
-      job.progress.scanned += ids.length;
-      await addVideos(ids);
-      c.page++;
-      c.pageToken = r.nextPageToken || null;
+    // One search per keyword x country. Each costs 100 units a page, so the form shows the total before it starts.
+    const regions = p.regions && p.regions.length ? p.regions : [''];
+    const queries = p.queries && p.queries.length ? p.queries : [p.q];
+    const plan = regions.flatMap((region) => queries.map((query) => ({ region, query })));
+    while ((c.si || 0) < plan.length) {
+      const { region, query } = plan[c.si || 0];
+      while (c.page < p.maxPages) {
+        checkCancel(job);
+        const r = await yt.call('search', {
+          part: 'id', type: 'video', q: query, maxResults: 50, order: p.order, pageToken: c.pageToken,
+          publishedAfter: p.after && p.after + 'T00:00:00Z', publishedBefore: p.before && p.before + 'T23:59:59Z',
+          regionCode: region || undefined, relevanceLanguage: p.relevanceLanguage,
+        }, 100);
+        const ids = (r.items || []).map((i) => i.id && i.id.videoId).filter(Boolean);
+        job.progress.scanned += ids.length;
+        await addVideos(ids, { region, query });
+        c.page++;
+        c.pageToken = r.nextPageToken || null;
+        saveJob(job);
+        if (!c.pageToken) break;
+      }
+      c.si = (c.si || 0) + 1; c.page = 0; c.pageToken = null;
       saveJob(job);
-      if (!c.pageToken) break;
     }
   }
   job.progress.candidates = videosOf(job.id).length;

@@ -40,6 +40,9 @@ Existing comment scrapers start from videos you already have. The slow part of r
   - comments per 1,000 views
   - language and category
   - skip Shorts, live streams, made-for-kids videos and videos with comments turned off
+- **Many keywords and countries in one pool:** in search mode, one search per line and a list of countries; each video remembers which country and keyword found it.
+- **Top N per group:** keep the most-commented (or most-viewed, most-liked) videos per year, country, year + country or channel, with a report of every group that fell short of the target.
+- **Comment cleaning:** remove empty, emoji-only, link-only, bait and duplicate comments and comments with your own junk words; label each comment's script (Bengali, Arabic, English letters…); optionally translate non-English comments to English with the AI helper. Writes `comments-clean.csv` and `comments-removed.csv` (with the reason for each removal) and never changes your original `comments.csv`.
 - **Optional AI helper** (free Gemini or OpenRouter key): describe your topic in plain words and it suggests keywords, and it can cross out off-topic videos by title. Only your topic text and video titles are sent, never comments or your YouTube keys.
 - **Saved rule sets,** so the same selection can be repeated and reported in a methods section.
 - **Contact-sheet review:** every match is a thumbnail circled in red; click one to cross it out.
@@ -114,7 +117,9 @@ For example, about 86,000 comments from three news channels over two and a half 
 
 **comments.csv:** `video_id, video_title, channel, comment_id, parent_id, is_reply, author, text, like_count, published_at, reply_count`
 
-**videos.csv:** `video_id, url, title, channel, published_at, views, likes, comments, duration_s, language, tags`
+**videos.csv:** `video_id, url, title, channel, published_at, views, likes, comments, duration_s, language, tags, search_regions, search_queries`
+
+**comments-clean.csv:** the same columns as `comments.csv` plus `script` and `text_en` (the English text: your translation, or the original for English-letter comments). **comments-removed.csv** has `script` and `reason` instead.
 
 ```python
 import pandas as pd
@@ -128,6 +133,7 @@ top_level = df[df.is_reply == 0]
 |---|---|
 | `server.js` | Local HTTP server and JSON API (bound to 127.0.0.1) |
 | `yt.js` | YouTube API client: key pool, quota tracking, retries |
+| `clean.js` | Comment cleaning: script labels, junk removal, translation merge |
 | `ai.js` | Optional AI helper: keyword suggestions and off-topic check (Gemini or OpenRouter) |
 | `jobs.js` | Discover and scrape jobs that save after every page and resume |
 | `filters.js` | Research rules, applied locally |

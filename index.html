@@ -125,6 +125,16 @@
   #aiSetup summary { cursor: pointer; font-size: 13.5px; font-weight: 600; color: var(--ink-2); }
   .ai-setup { display: grid; gap: 10px; padding-top: 10px; }
   #aiNote { color: var(--ink-2); }
+  .topn { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 13.5px; color: var(--ink-2); }
+  .topn input { width: 64px; padding: 5px 8px; }
+  .topn select { padding: 5px 8px; }
+  #topNote { margin: 8px 0 0; color: var(--ink-2); }
+  #topNote b { color: var(--warn); }
+  .cleanform { display: grid; gap: 12px; max-width: 640px; }
+  .checks { display: grid; gap: 6px; }
+  .checks label { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+  #cleanOut { margin-top: 18px; display: grid; gap: 12px; max-width: 720px; }
+  #cleanOut p { margin: 0; }
   .btn.small .icon { width: 16px; height: 16px; }
   .btn.ghost { background: transparent; color: var(--ink-2); padding: 6px 8px; }
   .btn.ghost:hover { color: var(--grease); background: transparent; }
@@ -346,7 +356,7 @@
         </div>
         <label class="field" id="chBox"><span>Channels <small>one per line: @handle, link or channel ID</small></span>
           <textarea id="channels" placeholder="@BBCNews&#10;@CNN&#10;https://www.youtube.com/@aljazeeraenglish"></textarea></label>
-        <label class="field" id="qBox" hidden><span>Search words</span><input id="q" placeholder="russia ukraine war"></label>
+        <label class="field" id="qBox" hidden><span>Search words <small>one search per line</small></span><textarea id="q" rows="3" placeholder="ram price hike&#10;ram shortage"></textarea></label>
         <div class="pair">
           <label class="field"><span>Published from</span><input type="date" id="after"></label>
           <label class="field"><span>Published until</span><input type="date" id="before"></label>
@@ -356,7 +366,7 @@
           <label class="field"><span>Results <small>×50</small></span><input type="number" id="maxPages" value="5" min="1" max="10"></label>
         </div>
         <div class="pair searchOnly" hidden>
-          <label class="field"><span>Country <small>e.g. US, BD</small></span><input id="regionCode" maxlength="2"></label>
+          <label class="field"><span>Countries <small>e.g. BD, IN, US: each is searched separately</small></span><input id="regionCode" placeholder="BD, IN, US"></label>
           <label class="field"><span>Language <small>e.g. en, bn</small></span><input id="relevanceLanguage"></label>
         </div>
         <label class="field"><span>Name this collection <small>optional</small></span><input id="jobName" placeholder="Russia–Ukraine news, 2022–24"></label>
@@ -447,10 +457,12 @@
         <button class="btn quiet small" id="selAll" type="button">Circle all</button>
         <button class="btn quiet small" id="selNone" type="button">Clear all</button>
         <button class="btn quiet small" id="aiOff" type="button" title="Uses the topic from the AI helper in step 3">AI: cross out off-topic</button>
+        <span class="topn"><span>Keep top</span><input type="number" id="topNum" value="9" min="1" aria-label="How many videos per group"><span>per</span><select id="topGroup" aria-label="Group by"><option value="yearRegion">year + country</option><option value="year">year</option><option value="region">country</option><option value="channel">channel</option></select><span>by</span><select id="topBy" aria-label="Rank by"><option value="comments">comments</option><option value="views">views</option><option value="likes">likes</option></select><button class="btn quiet small" id="topGo" type="button">Apply</button></span>
         <button class="btn quiet small" id="exportVideos" type="button"><svg class="icon"><use href="#i-down"/></svg>videos.csv</button>
       </div>
     </div>
 
+    <p class="hint" id="topNote" hidden></p>
     <div id="emptyState"></div>
     <div class="sheet" id="sheet" role="group" aria-label="Videos: checked frames will be scraped"></div>
     <div class="more" id="moreBox" hidden><button class="btn quiet" id="more" type="button">Show more frames</button></div>
@@ -463,6 +475,34 @@
         <thead><tr><th>Job</th><th>Status</th><th>Progress</th><th>Actions</th></tr></thead>
         <tbody id="jobRows"></tbody>
       </table>
+    </section>
+    <section class="jobs" id="cleanBox" aria-labelledby="cleanTitle">
+      <h2 id="cleanTitle">Clean comments</h2>
+      <p>Remove spam and off-topic comments, label what script each comment is written in, and translate non-English ones. Your original comments.csv is never changed.</p>
+      <div class="cleanform">
+        <label class="field"><span>Comments from</span><select id="cleanJob"></select></label>
+        <div class="checks">
+          <label><input type="checkbox" id="cDropShort" checked> Remove empty, emoji-only and very short comments</label>
+          <label><input type="checkbox" id="cDropLinks" checked> Remove link-only comments</label>
+          <label><input type="checkbox" id="cDropBait" checked> Remove “like if…”, “subscribe” and similar bait</label>
+          <label><input type="checkbox" id="cDropDup" checked> Remove duplicate comments on the same video</label>
+        </div>
+        <label class="field"><span>Also remove comments that mention <small>comma separated: off-topic words such as party names</small></span><input id="cleanDrop" placeholder="bnp, awami league"></label>
+        <label class="field"><span>Only keep comments that mention <small>optional; leave empty to keep everything else</small></span><input id="cleanKeep" placeholder="ram, price"></label>
+        <label class="field"><span>Comments not written in English letters</span><select id="cleanNonEn"><option value="keep">Keep them and label the script (Bengali, Arabic, …)</option><option value="drop">Remove them</option></select></label>
+        <div class="ai-row"><button class="btn" id="cleanGo" type="button">Clean comments</button><span class="hint" id="cleanState"></span></div>
+      </div>
+      <div id="cleanOut" hidden>
+        <p id="cleanSummary"></p>
+        <div class="ai-row">
+          <a class="btn quiet small" id="dlClean"><svg class="icon"><use href="#i-down"/></svg>comments-clean.csv</a>
+          <a class="btn quiet small" id="dlRemoved"><svg class="icon"><use href="#i-down"/></svg>comments-removed.csv</a>
+        </div>
+        <div id="trBox" hidden>
+          <p class="hint">Comments in Latin letters are kept as they are (this includes Bangla typed in English letters; a script cannot tell those apart). To get English versions of the rest, the AI helper can translate them. <b>This sends the text of those comments to your AI service.</b> Free plans take about 40 comments per request, so large sets are slow; you can stop and continue later.</p>
+          <div class="ai-row"><button class="btn quiet small" id="cleanTr" type="button">Translate with AI</button><span class="hint" id="trState"></span></div>
+        </div>
+      </div>
     </section>
   </main>
 </div>
@@ -552,14 +592,14 @@ const mode = () => $('input[name=mode]:checked').value;
 function syncMode() {
   const s = mode() === 'search';
   $('#chBox').hidden = s; $('#qBox').hidden = !s; $$('.searchOnly').forEach((el) => (el.hidden = !s));
-  const pages = Math.min(Math.max(+$('#maxPages').value || 5, 1), 10), cost = pages * 101;
+  const pages = Math.min(Math.max(+$('#maxPages').value || 5, 1), 10), nq = new Set($('#q').value.split('\n').map((x) => x.trim()).filter(Boolean)).size || 1, nr = new Set($('#regionCode').value.split(/[\s,]+/).filter((x) => x.length === 2)).size || 1, cost = pages * nq * nr * 101;
   $('#estimate').className = 'cost' + (s && cost > liveLeft() ? ' dear' : '');
-  $('#estimate').innerHTML = s ? `Costs up to <b>${fmt(cost)} units</b> for ${fmt(pages * 50)} videos` : 'About <b>1 unit per 25 uploads</b> scanned';
+  $('#estimate').innerHTML = s ? `Costs up to <b>${fmt(cost)} units</b> for up to ${fmt(pages * 50 * nq * nr)} videos (${nq * nr} search${nq * nr > 1 ? 'es' : ''})` : 'About <b>1 unit per 25 uploads</b> scanned';
   const n = $('#channels').value.split(/[\s,]+/).filter(Boolean).length;
   $('#sumFind').textContent = s ? ($('#q').value ? `Search: “${$('#q').value}”` : 'Search all of YouTube') : n ? `${n} channel${n > 1 ? 's' : ''}${$('#after').value ? ' · from ' + $('#after').value : ''}` : 'Where to look, and when';
 }
 $$('input[name=mode]').forEach((r) => (r.onchange = syncMode));
-['#maxPages', '#channels', '#q', '#after'].forEach((s) => $(s).addEventListener('input', syncMode));
+['#maxPages', '#channels', '#q', '#after', '#regionCode'].forEach((s) => $(s).addEventListener('input', syncMode));
 $('#find').onclick = async () => {
   const v = (id) => $('#' + id).value;
   const btn = $('#find'); btn.disabled = true;
@@ -758,6 +798,7 @@ async function loadJobs() {
   const job = currentJob();
   if (job && (['running', 'queued'].includes(job.status) || (lastStatus[job.id] && lastStatus[job.id] !== job.status))) applyRules();
   jobsList.forEach((j) => (lastStatus[j.id] = j.status));
+  fillCleanJobs();
   updateNext();
 }
 $('#jobRows').onclick = async (e) => {
@@ -771,6 +812,76 @@ $('#jobRows').onclick = async (e) => {
 // ---------- start ----------
 if (innerWidth < 920) $('#optbox').open = false; // phones: keep the sticky strip short
 loadPresets(); syncMode(); rulesSummary();
+
+
+// ---------- keep the top N per group ----------
+$('#topGo').onclick = () => {
+  const n = Math.max(1, +$('#topNum').value || 1), by = $('#topBy').value, grp = $('#topGroup').value;
+  if (!videos.length) return toast('Find some videos first.', true);
+  const keys = (v) => {
+    const y = (v.publishedAt || '').slice(0, 4) || '?', rs = v.regions && v.regions.length ? v.regions : ['any country'];
+    return grp === 'year' ? [y] : grp === 'region' ? rs : grp === 'channel' ? [v.channel] : rs.map((r) => `${y} · ${r}`);
+  };
+  const groups = new Map();
+  videos.forEach((v) => keys(v).forEach((k) => { if (!groups.has(k)) groups.set(k, []); groups.get(k).push(v); }));
+  const keep = new Set(), short = [];
+  [...groups].sort((a, b) => (a[0] < b[0] ? -1 : 1)).forEach(([k, list]) => {
+    list.sort((a, b) => b[by] - a[by]).slice(0, n).forEach((v) => keep.add(v.id));
+    if (list.length < n) short.push(`${esc(k)}: only ${list.length} of ${n}`);
+  });
+  rejected = new Set(videos.filter((v) => !keep.has(v.id)).map((v) => v.id));
+  renderSheet();
+  $('#topNote').hidden = false;
+  $('#topNote').innerHTML = `Kept ${fmt(keep.size)} videos in ${fmt(groups.size)} groups.` + (short.length ? ` <b>Short of ${n}:</b> ${short.join('; ')}. Try more search words, a wider date range, or a lower target.` : ' Every group reached the target.');
+};
+
+// ---------- clean comments ----------
+const cleanJobId = () => $('#cleanJob').value;
+function fillCleanJobs() {
+  const sel = $('#cleanJob'), old = sel.value;
+  const scr = jobsList.filter((j) => j.type === 'scrape' && j.progress && j.progress.comments > 0);
+  sel.innerHTML = scr.map((j) => `<option value="${esc(j.id)}">${esc(j.name || j.id)} · ${fmt(j.progress.comments)} comments</option>`).join('') || '<option value="">No scraped comments yet</option>';
+  if (scr.some((j) => j.id === old)) sel.value = old;
+  $('#cleanGo').disabled = !scr.length;
+}
+const SCRIPT_NAME = { latin: 'English letters', bengali: 'Bengali', arabic: 'Arabic', devanagari: 'Hindi/Devanagari', cyrillic: 'Cyrillic', cjk: 'Chinese/Japanese/Korean', thai: 'Thai', none: 'no letters' };
+function showClean(id, rep) {
+  if (!rep) { $('#cleanOut').hidden = true; return; }
+  const why = Object.entries(rep.byReason).map(([k, n]) => `${fmt(n)} ${k}`).join(', ');
+  const sc = Object.entries(rep.keptByScript).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${fmt(n)} ${SCRIPT_NAME[k] || k}`).join(', ');
+  $('#cleanSummary').innerHTML = `Kept <b>${fmt(rep.kept)}</b> of ${fmt(rep.total)} comments. Removed ${fmt(rep.removed)}${why ? ` (${esc(why)})` : ''}.<br>Kept comments by script: ${esc(sc)}.`;
+  $('#dlClean').href = `/api/jobs/${id}/comments-clean.csv`; $('#dlRemoved').href = `/api/jobs/${id}/comments-removed.csv`;
+  const other = Object.entries(rep.keptByScript).filter(([k]) => k !== 'latin' && k !== 'none').reduce((a, [, n]) => a + n, 0);
+  $('#trBox').hidden = !other; $('#cleanOut').hidden = false;
+}
+$('#cleanJob').onchange = async () => { try { showClean(cleanJobId(), cleanJobId() && await api(`/api/jobs/${cleanJobId()}/clean`)); } catch { $('#cleanOut').hidden = true; } };
+$('#cleanGo').onclick = async () => {
+  const id = cleanJobId(); if (!id) return;
+  const b = $('#cleanGo'); b.disabled = true; $('#cleanState').textContent = 'Cleaning…';
+  try {
+    const rep = await api(`/api/jobs/${id}/clean`, 'POST', { dropShort: $('#cDropShort').checked, dropLinks: $('#cDropLinks').checked, dropBait: $('#cDropBait').checked, dropDuplicates: $('#cDropDup').checked, dropWords: $('#cleanDrop').value, keepWords: $('#cleanKeep').value, nonEnglish: $('#cleanNonEn').value });
+    showClean(id, rep); $('#cleanState').textContent = '';
+  } catch (e) { toast(e.message, true); $('#cleanState').textContent = ''; }
+  b.disabled = false;
+};
+let trRun = false;
+$('#cleanTr').onclick = async () => {
+  const b = $('#cleanTr');
+  if (trRun) { trRun = false; return; }
+  const id = cleanJobId(); trRun = true; b.textContent = 'Stop translating'; let stuck = 0, last = -1;
+  try {
+    while (trRun) {
+      const r = await api(`/api/jobs/${id}/translate`, 'POST', {});
+      $('#trState').textContent = `${fmt(r.done)} translated, ${fmt(r.remaining)} left`;
+      if (!r.remaining) { toast('All non-English comments are translated. Download comments-clean.csv for the text_en column.'); break; }
+      stuck = r.done === last ? stuck + 1 : 0; last = r.done;
+      if (stuck >= 3) { toast('The AI is not returning translations. Check the AI setup and try again.', true); break; }
+      await new Promise((res) => setTimeout(res, 6000)); // free plans allow only a few requests a minute
+    }
+  } catch (e) { toast(e.message, true); }
+  trRun = false; b.textContent = 'Translate with AI';
+};
+$('#cleanJob').addEventListener('change', () => ($('#trState').textContent = ''));
 
 // ---------- AI helper (optional) ----------
 const AI_MODEL = { gemini: 'gemini-2.5-flash', openrouter: 'meta-llama/llama-3.3-70b-instruct:free' };
@@ -793,10 +904,11 @@ $('#aiSuggest').onclick = async () => {
   const topic = $('#aiTopic').value.trim(); if (!topic) return toast('Describe what you are studying first.', true);
   const b = $('#aiSuggest'); b.disabled = true; b.textContent = 'Thinking…';
   try {
-    const r = await api('/api/ai/suggest', 'POST', { topic });
+    const r = await api('/api/ai/suggest', 'POST', { topic, seed: $('[data-r=include]').value });
     const merge = (sel, add) => { const el = $(sel), have = el.value.split(',').map((w) => w.trim()).filter(Boolean); el.value = [...new Set([...have, ...add])].join(', '); };
     merge('[data-r=include]', r.include); merge('[data-r=exclude]', r.exclude);
-    $('#aiNote').hidden = false; $('#aiNote').textContent = (r.note ? r.note + ' ' : '') + 'The words were added to the boxes below. Edit them as you like.';
+    if (r.search && r.search.length) { const q = $('#q'); q.value = [...new Set([...q.value.split('\n').map((x) => x.trim()).filter(Boolean), ...r.search])].join('\n'); syncMode(); }
+    $('#aiNote').hidden = false; $('#aiNote').textContent = (r.note ? r.note + ' ' : '') + 'Keywords were added to the boxes below, and search phrases to step 2 (Search YouTube). Edit them as you like.';
     $('#rules').dispatchEvent(new Event('input', { bubbles: true }));
   } catch (e) { toast(e.message, true); }
   b.disabled = false; b.textContent = 'Suggest keywords';
