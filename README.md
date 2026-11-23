@@ -77,25 +77,69 @@ The app keeps its data in `~/.yt-research-scraper/`. The apps are built by GitHu
 
 ## Set up the AI helper (optional, free)
 
-The AI helper suggests keywords and search phrases, crosses out off-topic videos, and translates non-English comments. It needs a free key from **one** of these services. This is separate from your YouTube key.
+The AI helper suggests keywords and search phrases, crosses out off-topic videos, and translates non-English comments. It needs a free key from **one** of two services. This is separate from your YouTube key, and the rest of the app works without it.
 
-**Google Gemini (recommended)**
+| | Google Gemini | OpenRouter |
+|---|---|---|
+| Where to get a key | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) | [openrouter.ai/keys](https://openrouter.ai/keys) |
+| Account needed | A Google account | An OpenRouter account |
+| Default model in the app | `gemini-2.5-flash` | `meta-llama/llama-3.3-70b-instruct:free` |
+| Model choice | Edit the **Model** box | Edit the **Model** box; use one whose name ends in `:free` |
+| Free limits | Set by Google; see your AI Studio account | Set by OpenRouter and the model; see your OpenRouter account |
+| Good for | The simplest start; the app asks for JSON answers directly | Trying other free models |
+
+Free limits and model names change from time to time and are not checked by this project, so look at your account page if a request is refused. The default model names are only starting points.
+
+### Gemini setup
 
 1. Open [aistudio.google.com/apikey](https://aistudio.google.com/apikey) and sign in with a Google account.
 2. Press **Create API key** and copy the key.
 3. In the app, open step 3 **Research rules**, then **AI helper → Set up a free AI key**.
-4. Choose **Google Gemini**, paste the key and press **Save AI key**. The line next to *Suggest keywords* shows "Ready" when it worked.
+4. Under **Service** choose **Google Gemini**. Leave **Model** as it is.
+5. Paste the key into **Key** and press **Save AI key**. The line next to *Suggest keywords* changes to "Ready · gemini · key ending ….".
 
-**OpenRouter**
+### OpenRouter setup
 
 1. Open [openrouter.ai/keys](https://openrouter.ai/keys), sign in, press **Create key** and copy it.
-2. In the same box choose **OpenRouter**, paste the key, and keep a model whose name ends in `:free`. Free models are renamed from time to time; see [openrouter.ai/models](https://openrouter.ai/models?max_price=0) for the current ones.
-3. Press **Save AI key**.
+2. In the same box choose **OpenRouter**. The **Model** box fills in a free model.
+3. If that model has been renamed or removed, pick another from [openrouter.ai/models](https://openrouter.ai/models?max_price=0) (free models end in `:free`) and type its name into **Model**.
+4. Paste the key into **Key** and press **Save AI key**.
 
-Then describe your topic in your own words and press **Suggest keywords**. After finding videos, press **AI: cross out off-topic** above the sheet. After scraping, **Clean comments → Translate with AI** adds an English column.
+### Using it
 
-What is sent: your topic text, video titles and channel names, and (only when you press Translate) the comments you choose. Never your YouTube keys. Free plans have small limits, so big jobs take minutes, and free services may use submitted text to improve their products; read the service's terms before sending comments. The key is saved in `~/.yt-research-scraper/ai.json` on your computer.
+Describe your topic in your own words and press **Suggest keywords**. After finding videos, press **AI: cross out off-topic** above the sheet. After scraping, **Clean comments → Translate with AI** adds an English column. See [How the AI helper uses your free key](#how-the-ai-helper-uses-your-free-key) for what each button sends.
 
+### Change or remove the key
+
+- **Change the model:** edit **Model** and press **Save AI key** (leave **Key** empty to keep the saved key).
+- **Switch service:** choose the other service, paste its key and press **Save AI key**. Switching needs a new key.
+- **Replace a key:** paste the new key and press **Save AI key**.
+- **Remove a key:** delete the file `ai.json` in the app's data folder, which is `~/.yt-research-scraper/` in the installed apps and `data/` when you run from source. There is no remove button.
+
+The key is stored in plain text in that file, on your computer only, and is never shown in the page again (only its last four characters).
+
+### How the app calls each service
+
+| | Gemini | OpenRouter |
+|---|---|---|
+| Address | `generativelanguage.googleapis.com/v1beta/models/<model>:generateContent` | `openrouter.ai/api/v1/chat/completions` |
+| Key sent as | `x-goog-api-key` header (never in the address) | `Authorization: Bearer` header |
+| Answer format | Asks Gemini for JSON | Asks for JSON in the prompt and reads it from the reply |
+| Temperature | 0.2 | 0.2 |
+
+Both calls are made by the local app on your computer, straight to the service. Nothing goes through any server of mine.
+
+### If something goes wrong
+
+| Message | What it means and what to do |
+|---|---|
+| Set up an AI key first (step 3, AI helper). | No key is saved. Follow the setup above. |
+| That key does not look right. Copy the whole key from the provider. | The key has spaces or missing characters. Copy it again. |
+| The AI service rejected the key. Check it in the AI setup. | The service returned 401 or 403. The key is wrong, deleted or not allowed. Make a new one. |
+| The AI service says you used up its free limit for now. Wait a minute and try again. | The service returned 429. Wait, or check your daily limit on your account page. The app keeps what it already did, and translation continues where it stopped. |
+| AI service error (404) … | Usually a wrong or retired model name. Change **Model**. |
+| The AI answered in a form the app could not read. Try again. | The model did not return valid JSON. Try again or use a different model. |
+| The AI is not returning translations. | Three batches in a row gave no translations. Check the key and model, then press **Translate with AI** again. |
 
 ### How the AI helper uses your free key
 
@@ -192,6 +236,7 @@ node --test
 ## Privacy and security
 
 - The server only listens on `127.0.0.1`, and it rejects requests that don't come from localhost.
+- If you turn on the optional AI helper, the text it needs (your topic, video titles, and comments you choose to translate) goes to the Gemini or OpenRouter service you picked, and nowhere else. See [How the AI helper uses your free key](#how-the-ai-helper-uses-your-free-key).
 - API keys, quota counters, jobs and CSVs are stored in `data/`, which is git-ignored. **Don't share that folder.**
 - Only the official YouTube Data API v3 is used. There is no scraping of YouTube pages.
 
