@@ -40,6 +40,7 @@ Existing comment scrapers start from videos you already have. The slow part of r
   - comments per 1,000 views
   - language and category
   - skip Shorts, live streams, made-for-kids videos and videos with comments turned off
+- **Optional AI helper** (free Gemini or OpenRouter key): describe your topic in plain words and it suggests keywords, and it can cross out off-topic videos by title. Only your topic text and video titles are sent, never comments or your YouTube keys.
 - **Saved rule sets,** so the same selection can be repeated and reported in a methods section.
 - **Contact-sheet review:** every match is a thumbnail circled in red; click one to cross it out.
 - **Cost before you spend:** the selection strip shows the estimated quota cost against what's left today.
@@ -127,6 +128,7 @@ top_level = df[df.is_reply == 0]
 |---|---|
 | `server.js` | Local HTTP server and JSON API (bound to 127.0.0.1) |
 | `yt.js` | YouTube API client: key pool, quota tracking, retries |
+| `ai.js` | Optional AI helper: keyword suggestions and off-topic check (Gemini or OpenRouter) |
 | `jobs.js` | Discover and scrape jobs that save after every page and resume |
 | `filters.js` | Research rules, applied locally |
 | `index.html` | The app (single page, no build step) |

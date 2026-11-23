@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const yt = require('./yt');
 const jobs = require('./jobs');
+const ai = require('./ai');
 const { applyFilters } = require('./filters');
 
 const PORT = +process.env.PORT || 3000;
@@ -46,6 +47,13 @@ async function handle(req, res) {
     return send(res, 200, yt.status());
   }
   if (kind === 'keys' && id && m === 'DELETE') { yt.removeKey(id); return send(res, 200, yt.status()); }
+
+  if (kind === 'ai') {
+    if (!id && m === 'GET') return send(res, 200, ai.status());
+    if (!id && m === 'POST') return send(res, 200, ai.configure(await readBody(req)));
+    if (id === 'suggest' && m === 'POST') return send(res, 200, await ai.suggest((await readBody(req)).topic));
+    if (id === 'judge' && m === 'POST') { const b = await readBody(req); return send(res, 200, await ai.judge(b.topic, b.videos)); }
+  }
 
   if (kind === 'jobs' && !id) {
     if (m === 'GET') return send(res, 200, jobs.listJobs().map(summary));

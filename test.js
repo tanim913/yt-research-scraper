@@ -150,3 +150,22 @@ test('discover job (channels): stops at the start date, fetches stats, re-filter
   assert.ok(!calls.includes('search'), 'channel mode never uses the 100-unit search');
   assert.strictEqual(calls.filter((c) => c === 'playlistItems').length, 2, 'stopped once a page was entirely older than the start date');
 });
+
+test('ai helper: suggests keywords and flags off-topic titles; the key is never returned', async () => {
+  const ai = require('./ai');
+  const sent = [];
+  const gemini = (text) => async (url, opts) => { sent.push({ url, opts }); return { ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [{ text }] } }] }) }; };
+  assert.equal(ai.status().configured, false);
+  await assert.rejects(ai.suggest('war news'), /Set up an AI key/);
+  const st = ai.configure({ provider: 'gemini', key: 'TEST-AI-KEY-1234567890' });
+  assert.deepEqual(st, { provider: 'gemini', model: 'gemini-2.5-flash', configured: true, last4: '7890' });
+  ai.setFetch(gemini('```json\n{"include":["Ukraine","ukraine","Kyiv"],"exclude":["gameplay"],"note":"ok"}\n```'));
+  assert.deepEqual(await ai.suggest('war news'), { include: ['ukraine', 'kyiv'], exclude: ['gameplay'], note: 'ok' });
+  ai.setFetch(gemini('{"off":[2,9,"x"]}'));
+  const vids = [{ id: 'a', title: 'War update', channel: 'C' }, { id: 'b', title: 'Cat video', channel: 'D' }];
+  assert.deepEqual((await ai.judge('war news', vids)).off, ['b']); // 9 and "x" are out of range, dropped
+  assert.match(sent[0].opts.headers['x-goog-api-key'], /^TEST-AI-KEY/);
+  assert.ok(!sent[0].url.includes('TEST-AI-KEY')); // key travels in a header, not the URL
+  ai.setFetch(async () => ({ ok: false, status: 429, json: async () => ({}) }));
+  await assert.rejects(ai.suggest('war news'), /free limit/);
+});

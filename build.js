@@ -11,7 +11,7 @@ const out = path.join('dist', 'yt-research-scraper' + (win ? '.exe' : ''));
 // One file for the app: sea needs a single entry script, so concatenate the modules in require order.
 // Local requires become lookups in __mods; 'require' itself is a parameter in the sea wrapper, so it can't be redeclared.
 const src = (f) => fs.readFileSync(f, 'utf8').replace(/require\('(\.\/[\w]+)'\)/g, "__local('$1')");
-const bundle = ['yt.js', 'filters.js', 'jobs.js'].map((f) =>
+const bundle = ['yt.js', 'filters.js', 'jobs.js', 'ai.js'].map((f) =>
   `__mods[${JSON.stringify('./' + f.replace('.js', ''))}] = (() => { const module = { exports: {} }; const exports = module.exports;\n${src(f)}\nreturn module.exports; })();`).join('\n');
 const main = `const __mods = {}; const __local = (id) => __mods[id];
 ${bundle}

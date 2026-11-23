@@ -121,6 +121,10 @@
   .btn.quiet { background: var(--sheet); color: var(--ink); border-color: var(--rule-strong); }
   .btn.quiet:hover { border-color: var(--ink); }
   .btn.small { padding: 6px 10px; font-size: 13.5px; }
+  .ai-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #aiSetup summary { cursor: pointer; font-size: 13.5px; font-weight: 600; color: var(--ink-2); }
+  .ai-setup { display: grid; gap: 10px; padding-top: 10px; }
+  #aiNote { color: var(--ink-2); }
   .btn.small .icon { width: 16px; height: 16px; }
   .btn.ghost { background: transparent; color: var(--ink-2); padding: 6px 8px; }
   .btn.ghost:hover { color: var(--grease); background: transparent; }
@@ -364,6 +368,23 @@
       <summary><span class="num">3</span><span><h2>Research rules</h2><span class="sum" id="sumRules">Free to change: no quota used</span></span><svg class="icon chev"><use href="#i-chev"/></svg></summary>
       <div class="body" id="rules">
         <p class="help">Rules filter the videos already found, so changing them is <b>instant and free</b>. Leave a box empty to ignore that rule.</p>
+        <fieldset id="ai">
+          <legend>AI helper <small>optional, free</small></legend>
+          <label class="field"><span>What are you studying? <small>in your own words</small></span><textarea id="aiTopic" rows="3" placeholder="Comments on news coverage of the Russia–Ukraine war"></textarea></label>
+          <div class="ai-row"><button class="btn quiet small" id="aiSuggest" type="button">Suggest keywords</button><span class="hint" id="aiState"></span></div>
+          <p class="hint" id="aiNote" hidden></p>
+          <details id="aiSetup">
+            <summary>Set up a free AI key</summary>
+            <div class="ai-setup">
+              <label class="field"><span>Service</span><select id="aiProvider"><option value="gemini">Google Gemini (free key)</option><option value="openrouter">OpenRouter (free models)</option></select></label>
+              <label class="field"><span>Key</span><input id="aiKey" type="password" autocomplete="off" placeholder="Paste the key here"></label>
+              <label class="field"><span>Model <small>leave as is unless the service renamed it</small></span><input id="aiModel"></label>
+              <button class="btn quiet small" id="aiSave" type="button">Save AI key</button>
+              <p class="hint">Gemini: make a free key at aistudio.google.com/apikey. OpenRouter: make a key at openrouter.ai/keys and use a model whose name ends in <code>:free</code>. Free plans allow only a few requests a minute, so big checks are slow.</p>
+              <p class="hint"><b>What is sent:</b> your topic text and, for the clean-up, video titles and channel names. Never comments and never your YouTube keys. The key stays in the <code>data</code> folder on this computer.</p>
+            </div>
+          </details>
+        </fieldset>
         <fieldset>
           <legend>Topic</legend>
           <label class="field"><span>Must mention <small>comma separated; checks title, description and tags</small></span><input data-r="include" placeholder="ukraine, russia, zelensky"></label>
@@ -425,6 +446,7 @@
         </select>
         <button class="btn quiet small" id="selAll" type="button">Circle all</button>
         <button class="btn quiet small" id="selNone" type="button">Clear all</button>
+        <button class="btn quiet small" id="aiOff" type="button" title="Uses the topic from the AI helper in step 3">AI: cross out off-topic</button>
         <button class="btn quiet small" id="exportVideos" type="button"><svg class="icon"><use href="#i-down"/></svg>videos.csv</button>
       </div>
     </div>
@@ -749,6 +771,53 @@ $('#jobRows').onclick = async (e) => {
 // ---------- start ----------
 if (innerWidth < 920) $('#optbox').open = false; // phones: keep the sticky strip short
 loadPresets(); syncMode(); rulesSummary();
+
+// ---------- AI helper (optional) ----------
+const AI_MODEL = { gemini: 'gemini-2.5-flash', openrouter: 'meta-llama/llama-3.3-70b-instruct:free' };
+async function loadAi() {
+  try {
+    const s = await api('/api/ai');
+    $('#aiProvider').value = s.provider; $('#aiModel').value = s.model;
+    $('#aiState').textContent = s.configured ? `Ready · ${s.provider} · key ending ${s.last4}` : 'Not set up yet';
+    $('#aiSetup').open = !s.configured;
+  } catch (e) { toast(e.message, true); }
+}
+$('#aiProvider').onchange = () => { $('#aiModel').value = AI_MODEL[$('#aiProvider').value]; };
+$('#aiSave').onclick = async () => {
+  try {
+    await api('/api/ai', 'POST', { provider: $('#aiProvider').value, key: $('#aiKey').value, model: $('#aiModel').value });
+    $('#aiKey').value = ''; await loadAi(); toast('AI key saved.');
+  } catch (e) { toast(e.message, true); }
+};
+$('#aiSuggest').onclick = async () => {
+  const topic = $('#aiTopic').value.trim(); if (!topic) return toast('Describe what you are studying first.', true);
+  const b = $('#aiSuggest'); b.disabled = true; b.textContent = 'Thinking…';
+  try {
+    const r = await api('/api/ai/suggest', 'POST', { topic });
+    const merge = (sel, add) => { const el = $(sel), have = el.value.split(',').map((w) => w.trim()).filter(Boolean); el.value = [...new Set([...have, ...add])].join(', '); };
+    merge('[data-r=include]', r.include); merge('[data-r=exclude]', r.exclude);
+    $('#aiNote').hidden = false; $('#aiNote').textContent = (r.note ? r.note + ' ' : '') + 'The words were added to the boxes below. Edit them as you like.';
+    $('#rules').dispatchEvent(new Event('input', { bubbles: true }));
+  } catch (e) { toast(e.message, true); }
+  b.disabled = false; b.textContent = 'Suggest keywords';
+};
+$('#aiOff').onclick = async () => {
+  const topic = $('#aiTopic').value.trim(); if (!topic) { $('#stepRules').open = true; $('#aiTopic').focus(); return toast('Describe your topic in the AI helper (step 3) first.', true); }
+  const list = videos.filter((v) => !rejected.has(v.id)); if (!list.length) return toast('Find some videos first.', true);
+  const b = $('#aiOff'); b.disabled = true; let done = 0, off = 0;
+  try {
+    for (let i = 0; i < list.length; i += 50) {
+      const chunk = list.slice(i, i + 50);
+      const r = await api('/api/ai/judge', 'POST', { topic, videos: chunk.map(({ id, title, channel }) => ({ id, title, channel })) });
+      r.off.forEach((id) => rejected.add(id)); off += r.off.length; done += chunk.length;
+      b.textContent = `AI checked ${done} of ${list.length}…`;
+      if (i + 50 < list.length) await new Promise((res) => setTimeout(res, 6000)); // free plans allow only a few requests a minute
+    }
+    toast(`AI crossed out ${off} of ${list.length} videos. Click a frame to bring one back.`);
+  } catch (e) { toast(`${e.message} Stopped after ${done} videos; frames already crossed out stay crossed out.`, true); }
+  b.disabled = false; b.textContent = 'AI: cross out off-topic'; renderSheet();
+};
+loadAi();
 Promise.all([loadKeys(), loadJobs()]).then(applyRules).catch((e) => toast(e.message, true));
 setInterval(() => { loadJobs().catch(() => {}); loadKeys().catch(() => {}); }, 3000);
 </script>
