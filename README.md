@@ -10,6 +10,18 @@ You describe the videos you want with rules: channels, date range, keywords, vie
 
 It was built for the kind of dataset used in studies of public opinion on news videos, for example comments on Russia–Ukraine war coverage from BBC, CNN and Al Jazeera.
 
+![The contact sheet: videos that match the research rules, circled to keep or crossed out, with the quota left at the top and the scrape cost at the bottom](docs/screenshots/app.png)
+
+<sub>Screenshots use demo data. Video thumbnails are hidden.</sub>
+
+## Screenshots
+
+| Jobs and selection cost | User guide |
+|---|---|
+| ![The jobs list with progress and CSV downloads, above the strip that shows the selection's quota cost](docs/screenshots/app-jobs.png) | ![The user guide opens on eight common questions set as film frames](docs/screenshots/guide.png) |
+
+<p align="center"><img src="docs/screenshots/mobile.png" width="560" alt="The app and the user guide at phone width"></p>
+
 ## Why
 
 Existing comment scrapers start from videos you already have. The slow part of research is **finding the right videos** under clear, reportable rules. Doing that with YouTube's search API costs 100 quota units per call, so one key runs out after about 100 searches. This tool:
