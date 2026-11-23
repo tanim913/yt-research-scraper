@@ -58,20 +58,43 @@ Existing comment scrapers start from videos you already have. The slow part of r
 
 ## Download the app
 
-The project page is built from [site/index.html](site/index.html) and published by GitHub Pages ([pages.yml](.github/workflows/pages.yml)).
+No Node.js needed. Get the file for your system from the [latest release](https://github.com/tanim913/yt-research-scraper/releases/latest). The app opens in your browser; keep its window open while you work, because closing it stops the app.
 
-No Node.js needed. Get the file for your system from the [latest release](https://github.com/tanim913/yt-research-scraper/releases/latest) and open it. It starts the app and opens it in your browser; keep its window open while you work.
+| System | File | How to install |
+|---|---|---|
+| Windows | `yt-research-scraper-setup-windows-x64.exe` | Run it and follow the steps, then start it from the Start menu. A `…-portable.exe` needs no install. |
+| macOS (M1 or newer) | `yt-research-scraper-macos-apple-silicon.dmg` | Open it and drag the app into Applications. |
+| macOS (Intel) | `yt-research-scraper-macos-intel.dmg` | Same as above. |
+| Ubuntu / Debian | `yt-research-scraper-linux-amd64.deb` | `sudo apt install ./yt-research-scraper-linux-amd64.deb`, then start it from the applications menu or run `yt-research-scraper`. |
+| Other Linux | `yt-research-scraper-linux-x64` | `chmod +x yt-research-scraper-linux-x64`, then run it. |
 
-| System | File |
-|---|---|
-| Windows | `yt-research-scraper-windows-x64.exe` |
-| macOS (M1 or newer) | `yt-research-scraper-macos-apple-silicon` |
-| macOS (Intel) | `yt-research-scraper-macos-intel` |
-| Linux | `yt-research-scraper-linux-x64` |
+The apps are **not code-signed**, so the first launch shows a warning:
 
-The apps are not code-signed, so the first launch shows a warning. On Windows press **More info → Run anyway**. On macOS right-click the file and press **Open**. On macOS and Linux you may need to run `chmod +x <file>` first. The app keeps its data in `~/.yt-research-scraper/`.
+- **Windows:** "Windows protected your PC" → **More info** → **Run anyway**.
+- **macOS:** right-click the app → **Open** → **Open**. On macOS 15 or newer, if that is not offered, open **System Settings → Privacy & Security**, scroll down and press **Open Anyway**.
 
-The apps are built by GitHub Actions ([release.yml](.github/workflows/release.yml)) when a version tag is pushed.
+The app keeps its data in `~/.yt-research-scraper/`. The apps are built by GitHub Actions ([release.yml](.github/workflows/release.yml)) when a version tag is pushed. The project page is built from [site/index.html](site/index.html) ([pages.yml](.github/workflows/pages.yml)).
+
+## Set up the AI helper (optional, free)
+
+The AI helper suggests keywords and search phrases, crosses out off-topic videos, and translates non-English comments. It needs a free key from **one** of these services. This is separate from your YouTube key.
+
+**Google Gemini (recommended)**
+
+1. Open [aistudio.google.com/apikey](https://aistudio.google.com/apikey) and sign in with a Google account.
+2. Press **Create API key** and copy the key.
+3. In the app, open step 3 **Research rules**, then **AI helper → Set up a free AI key**.
+4. Choose **Google Gemini**, paste the key and press **Save AI key**. The line next to *Suggest keywords* shows "Ready" when it worked.
+
+**OpenRouter**
+
+1. Open [openrouter.ai/keys](https://openrouter.ai/keys), sign in, press **Create key** and copy it.
+2. In the same box choose **OpenRouter**, paste the key, and keep a model whose name ends in `:free`. Free models are renamed from time to time; see [openrouter.ai/models](https://openrouter.ai/models?max_price=0) for the current ones.
+3. Press **Save AI key**.
+
+Then describe your topic in your own words and press **Suggest keywords**. After finding videos, press **AI: cross out off-topic** above the sheet. After scraping, **Clean comments → Translate with AI** adds an English column.
+
+What is sent: your topic text, video titles and channel names, and (only when you press Translate) the comments you choose. Never your YouTube keys. Free plans have small limits, so big jobs take minutes, and free services may use submitted text to improve their products; read the service's terms before sending comments. The key is saved in `~/.yt-research-scraper/ai.json` on your computer.
 
 ## Run from source
 
@@ -140,6 +163,7 @@ top_level = df[df.is_reply == 0]
 | `index.html` | The app (single page, no build step) |
 | `guide.html` | The user guide |
 | `build.js` | Packs the app into a single executable (used by the release workflow) |
+| `packaging/` | Builds the `.deb`, the Windows installer and the macOS `.dmg` |
 | `test.js` | Tests against a fake API: no network, no quota |
 
 Run the tests with:

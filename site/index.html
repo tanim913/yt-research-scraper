@@ -143,6 +143,10 @@
   .use li { display: flex; gap: 10px; }
   .use li::before { content: ""; width: 14px; height: 2px; background: var(--grease); margin-top: .8em; flex: none; }
 
+  .aisteps { margin: 0; padding: 0; list-style: none; counter-reset: a; border-top: 2px solid var(--ink); }
+  .aisteps li { counter-increment: a; display: grid; grid-template-columns: 2.2em 1fr; gap: 6px; padding: 14px 0; border-bottom: 1px solid var(--rule-strong); color: var(--ink-2); }
+  .aisteps li::before { content: counter(a); font: 600 24px/1 var(--cond); color: var(--grease-dark); }
+  .aisteps b { color: var(--ink); }
   /* download band */
   .get { margin-top: clamp(64px, 9vw, 120px); padding: clamp(52px, 7vw, 88px) 0; }
   .get h2 { color: #fff; max-width: 14ch; }
@@ -342,23 +346,40 @@
     </div>
   </section>
 
+  <section class="band" id="ai">
+    <div class="wrap split">
+      <div>
+        <h2>An AI helper, with a free key</h2>
+        <p class="sub">Describe your topic and it suggests keywords and search phrases, crosses out off-topic videos, and translates non-English comments. It is optional, and your YouTube keys never go to it.</p>
+      </div>
+      <div class="reveal">
+        <ol class="aisteps">
+          <li><span><b>Get a free key.</b> Open <a href="https://aistudio.google.com/apikey" rel="noopener">aistudio.google.com/apikey</a>, sign in with Google and press <em>Create API key</em>. (Or use a free <a href="https://openrouter.ai/keys" rel="noopener">OpenRouter</a> key.)</span></li>
+          <li><span><b>Open the setup box.</b> In the app, go to step 3 <em>Research rules</em>, then <em>AI helper → Set up a free AI key</em>.</span></li>
+          <li><span><b>Paste and save.</b> Choose <em>Google Gemini</em>, paste the key and press <em>Save AI key</em>. Then type your topic and press <em>Suggest keywords</em>.</span></li>
+        </ol>
+        <p class="fine">Free plans have small limits, so large checks take a few minutes. Free services may use submitted text to improve their products; check their terms before translating comments.</p>
+      </div>
+    </div>
+  </section>
+
   <section class="get rebate on-film" id="download">
     <div class="wrap">
       <h2>Get the app</h2>
-      <p class="sub">One file. Open it and the app starts in your browser, with nothing to install.</p>
+      <p class="sub">Install it like any app. It starts in your browser, and nothing else needs installing.</p>
       <div class="grid" id="dl-grid">
-        <a class="dl" data-os="win" href="https://github.com/tanim913/yt-research-scraper/releases/latest/download/yt-research-scraper-windows-x64.exe"><b>Windows</b><span>yt-research-scraper-windows-x64.exe</span><i class="go"><svg class="icon"><use href="#i-down"/></svg>Download</i></a>
-        <a class="dl" data-os="mac" href="https://github.com/tanim913/yt-research-scraper/releases/latest/download/yt-research-scraper-macos-apple-silicon"><b>Mac · M1 or newer</b><span>yt-research-scraper-macos-apple-silicon</span><i class="go"><svg class="icon"><use href="#i-down"/></svg>Download</i></a>
-        <a class="dl" data-os="mac-intel" href="https://github.com/tanim913/yt-research-scraper/releases/latest/download/yt-research-scraper-macos-intel"><b>Mac · Intel</b><span>yt-research-scraper-macos-intel</span><i class="go"><svg class="icon"><use href="#i-down"/></svg>Download</i></a>
-        <a class="dl" data-os="linux" href="https://github.com/tanim913/yt-research-scraper/releases/latest/download/yt-research-scraper-linux-x64"><b>Linux</b><span>yt-research-scraper-linux-x64</span><i class="go"><svg class="icon"><use href="#i-down"/></svg>Download</i></a>
+        <a class="dl" data-os="win" href="https://github.com/tanim913/yt-research-scraper/releases/latest/download/yt-research-scraper-setup-windows-x64.exe"><b>Windows</b><span>Installer (.exe)</span><i class="go"><svg class="icon"><use href="#i-down"/></svg>Download</i></a>
+        <a class="dl" data-os="mac" href="https://github.com/tanim913/yt-research-scraper/releases/latest/download/yt-research-scraper-macos-apple-silicon.dmg"><b>Mac · M1 or newer</b><span>Disk image (.dmg)</span><i class="go"><svg class="icon"><use href="#i-down"/></svg>Download</i></a>
+        <a class="dl" data-os="mac-intel" href="https://github.com/tanim913/yt-research-scraper/releases/latest/download/yt-research-scraper-macos-intel.dmg"><b>Mac · Intel</b><span>Disk image (.dmg)</span><i class="go"><svg class="icon"><use href="#i-down"/></svg>Download</i></a>
+        <a class="dl" data-os="linux" href="https://github.com/tanim913/yt-research-scraper/releases/latest/download/yt-research-scraper-linux-amd64.deb"><b>Ubuntu · Debian</b><span>Package (.deb)</span><i class="go"><svg class="icon"><use href="#i-down"/></svg>Download</i></a>
       </div>
       <div class="first">
         <p><b>Windows says “protected your PC”</b>Press <b style="display:inline">More info</b>, then <b style="display:inline">Run anyway</b>. The apps are not code-signed.</p>
-        <p><b>Mac says “unidentified developer”</b>Right-click the file and press <b style="display:inline">Open</b>. If it won’t run, open Terminal and run <code>chmod +x</code> on the file first.</p>
+        <p><b>Mac says “unidentified developer”</b>Right-click the app and press <b style="display:inline">Open</b>. On macOS 15, if that isn’t offered, open <b style="display:inline">System Settings → Privacy &amp; Security</b> and press <b style="display:inline">Open Anyway</b>.</p>
         <p><b>Keep its window open</b>Closing it stops the app. Your keys and data are saved in <code>.yt-research-scraper</code> in your home folder.</p>
       </div>
       <div class="src">
-        <span>Prefer the source? Install Node.js 20 and run</span><code>node server.js</code>
+        <span>Ubuntu: <code>sudo apt install ./yt-research-scraper-linux-amd64.deb</code>. Other Linux, or no installer: get the portable files on the releases page, or install Node.js 20 and run</span><code>node server.js</code>
         <a href="https://github.com/tanim913/yt-research-scraper/releases" rel="noopener">All releases</a>
       </div>
     </div>

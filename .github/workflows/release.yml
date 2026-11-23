@@ -11,8 +11,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { os: ubuntu-22.04, name: linux-x64 }
-          - { os: windows-latest, name: windows-x64 }
+          - { os: ubuntu-22.04, name: linux }
+          - { os: windows-latest, name: windows }
           - { os: macos-15-intel, name: macos-intel }
           - { os: macos-latest, name: macos-apple-silicon }
     runs-on: ${{ matrix.os }}
@@ -22,15 +22,41 @@ jobs:
         with: { node-version: 20 }
       - run: node --test
       - run: node build.js
-      - name: Name the file
+
+      - name: Work out the version
+        id: v
         shell: bash
         run: |
-          ext=""; [ "${{ runner.os }}" = "Windows" ] && ext=".exe"
-          mv "dist/yt-research-scraper$ext" "yt-research-scraper-${{ matrix.name }}$ext"
+          if [ "$GITHUB_REF_TYPE" = tag ]; then echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"; else echo "version=0.0.0" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Package (Linux .deb + portable binary)
+        if: matrix.name == 'linux'
+        run: |
+          mkdir release
+          ./packaging/make-deb.sh dist/yt-research-scraper "${{ steps.v.outputs.version }}" release/yt-research-scraper-linux-amd64.deb
+          cp dist/yt-research-scraper release/yt-research-scraper-linux-x64
+          dpkg-deb -I release/yt-research-scraper-linux-amd64.deb
+
+      - name: Package (Windows installer + portable exe)
+        if: matrix.name == 'windows'
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress -y
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DVersion=${{ steps.v.outputs.version }}" packaging\windows\installer.iss
+          New-Item -ItemType Directory release | Out-Null
+          Move-Item dist\yt-research-scraper-setup-windows-x64.exe release\
+          Copy-Item dist\yt-research-scraper.exe release\yt-research-scraper-windows-x64-portable.exe
+
+      - name: Package (macOS .dmg)
+        if: startsWith(matrix.name, 'macos')
+        run: |
+          mkdir release
+          ./packaging/make-dmg.sh dist/yt-research-scraper "${{ steps.v.outputs.version }}" "release/yt-research-scraper-${{ matrix.name }}.dmg"
+
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.name }}
-          path: yt-research-scraper-*
+          path: release/*
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
@@ -38,7 +64,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions: { contents: write }
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with: { path: apps, merge-multiple: true }
       - uses: softprops/action-gh-release@v2
-        with: { files: apps/*, generate_release_notes: true }
+        with:
+          files: apps/*
+          body_path: packaging/release-notes.md
+          generate_release_notes: true
